@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -20,7 +20,9 @@ const EVENT_COLORS = [
   { id: 'high', bg: 'bg-red-50', border: 'border-red-200', tab: 'bg-red-500' },
   { id: 'medium', bg: 'bg-orange-50', border: 'border-orange-200', tab: 'bg-orange-500' },
   { id: 'low', bg: 'bg-green-50', border: 'border-green-200', tab: 'bg-green-500' },
-  { id: 'info', bg: 'bg-blue-50', border: 'border-blue-200', tab: 'bg-blue-500' }
+  { id: 'info', bg: 'bg-blue-50', border: 'border-blue-200', tab: 'bg-blue-500' },
+  { id: 'purple', bg: 'bg-purple-50', border: 'border-purple-200', tab: 'bg-purple-500' },
+  { id: 'pink', bg: 'bg-pink-50', border: 'border-pink-200', tab: 'bg-pink-500' }
 ];
 
 const UNIT_OPTIONS = ['Asset Management', 'Content Creator', 'Design Graphic'];
@@ -37,7 +39,6 @@ const DIVISI_OPTIONS = ['SMP Banin', 'SMA Banin', 'SMP Banat', 'SMA Banat', 'STI
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-// Setup Cloud Database (Firebase)
 const firebaseConfig = {
   apiKey: "AIzaSyC5fsM7k6D4HIhhmvNMVniGReHmIbItynY",
   authDomain: "mmedia-wiibs-task-planner.firebaseapp.com",
@@ -74,34 +75,47 @@ const getWeekDays = (weekOffset) => {
   return days;
 };
 
-const SchoolEventCard = ({ event, onDelete, onView }) => {
+const SchoolEventCard = ({ event, onDelete, onView, onEdit }) => {
   const activeColor = EVENT_COLORS.find(c => c.id === (event.colorId || 'info')) || EVENT_COLORS[4];
+  const hasEndDate = event.endDate && event.endDate !== event.date;
   
   return (
-    <div className={`${activeColor.bg} border ${activeColor.border} border-l-4 rounded-xl shadow-sm p-3 mb-3 relative group overflow-hidden transition-all hover:shadow-md`} style={{ borderLeftColor: activeColor.tab.replace('bg-', '') }}>
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className={`${activeColor.bg} border ${activeColor.border} border-l-4 rounded-xl shadow-sm p-3 mb-3 relative group overflow-hidden transition-all hover:shadow-md cursor-pointer`} 
+         style={{ borderLeftColor: activeColor.tab.replace('bg-', '') }}
+         onClick={() => onView(event)}>
+      
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={e => e.stopPropagation()}>
         <button onClick={() => onView(event)} className="text-gray-400 hover:text-indigo-600 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-indigo-200" title="Lihat Detail">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+        </button>
+        <button onClick={() => onEdit(event)} className="text-gray-400 hover:text-amber-500 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-amber-200" title="Edit Event">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
         </button>
         <button onClick={onDelete} className="text-gray-400 hover:text-red-500 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-red-100" title="Hapus Event">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
       
-      <div className="mb-2 pr-12">
-        <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-600 bg-white/60 px-2 py-0.5 rounded-md border border-indigo-100 shadow-sm">{event.divisi}</span>
+      <div className="mb-2 pr-20 flex items-center gap-1.5">
+        <span className={`text-[9px] font-extrabold uppercase tracking-widest text-white ${activeColor.tab} px-2 py-0.5 rounded-md shadow-sm`}>{event.divisi}</span>
+        {hasEndDate && (
+          <span className="text-[9px] font-bold text-gray-500 flex items-center gap-0.5 bg-white/80 px-1.5 py-0.5 rounded border border-gray-200">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            Multi-hari
+          </span>
+        )}
       </div>
       
-      <h4 className="text-sm font-bold text-gray-800 leading-tight mb-2 pr-2">{event.nama}</h4>
+      <h4 className="text-sm font-bold text-gray-800 leading-tight mb-2 pr-2 line-clamp-2">{event.nama}</h4>
       
-      <div className="flex flex-col gap-1.5 text-[11px] text-gray-600 bg-white/60 p-2 rounded-lg border border-white/50">
+      <div className="flex flex-col gap-1.5 text-[11px] text-gray-600 bg-white/60 p-2 rounded-lg border border-white/50 shadow-inner">
         <div className="flex items-start gap-1.5">
-           <svg className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+           <svg className={`w-3.5 h-3.5 ${activeColor.tab.replace('bg-', 'text-')} shrink-0 mt-0.5`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
            <span className="font-semibold">{event.waktu || 'Waktu belum ditentukan'}</span>
         </div>
         {event.lokasi && (
-          <div className="flex items-start gap-1.5 border-t border-gray-100/50 pt-1.5 mt-0.5">
-             <svg className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <div className="flex items-start gap-1.5 border-t border-gray-200/50 pt-1.5 mt-0.5">
+             <svg className={`w-3.5 h-3.5 ${activeColor.tab.replace('bg-', 'text-')} shrink-0 mt-0.5`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
              <span className="truncate" title={event.lokasi}>{event.lokasi}</span>
           </div>
         )}
@@ -187,7 +201,7 @@ const EventCard = ({
             <button
               key={color.id}
               onClick={() => onUpdateEventColor(event.id, color.id)}
-              className={`w-3.5 h-3.5 rounded-full ${color.tab} border-2 border-white shadow-sm transition-transform hover:scale-110 ${event.colorId === color.id ? 'ring-2 ring-offset-1 ring-gray-300 scale-110' : ''}`}
+              className={`w-3.5 h-3.5 rounded-full ${color.tab} border-2 border-white shadow-sm transition-transform hover:scale-110 ${event.colorId === color.id ? 'ring-2 ring-offset-1 ring-gray-400 scale-110' : ''}`}
               title={`Pilih Warna`}
             />
           ))}
@@ -204,15 +218,7 @@ const EventCard = ({
           const memberStyle = MEMBER_COLORS[task.assignee] || { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' };
 
           return (
-            <div key={task.id} className="flex relative group/task border-b border-gray-100 last:border-b-0">
-              <button 
-                onClick={() => onDeleteTask(event.id, task.id)}
-                className="absolute -top-2 -right-1 z-10 bg-white/90 backdrop-blur-sm rounded-md p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover/task:opacity-100 shadow-sm border border-gray-200 transition-all hover:scale-110 hover:border-red-200"
-                title="Hapus Baris"
-              >
-                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </button>
-              
+            <div key={task.id} className="flex relative group/task border-b border-gray-100 last:border-b-0 items-stretch">
               <div className={`w-[35%] p-1 border-r border-gray-100 flex flex-col justify-center transition-colors ${memberStyle.bg} ${memberStyle.text}`}>
                 <div className="relative w-full flex items-center h-full">
                   <select
@@ -228,7 +234,7 @@ const EventCard = ({
                 </div>
               </div>
 
-              <div className="w-[65%] p-1.5 bg-white flex items-center justify-between hover:bg-slate-50 transition-colors">
+              <div className="w-[65%] p-1.5 bg-white flex items-center justify-between hover:bg-slate-50 transition-colors relative">
                 <div className="flex-1 w-full min-w-0 mr-1.5">
                   {task.isCustom ? (
                     <div className="flex items-center w-full gap-1">
@@ -271,13 +277,22 @@ const EventCard = ({
                   )}
                 </div>
                 
-                <button
-                  onClick={() => onToggleTaskCompletion(event.id, task.id)}
-                  className="w-5 h-5 shrink-0 flex items-center justify-center rounded-md bg-white border border-gray-300 hover:bg-emerald-50 hover:border-emerald-400 text-gray-200 hover:text-emerald-500 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:ring-offset-1"
-                  title="Tandai Selesai"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button 
+                    onClick={() => onDeleteTask(event.id, task.id)}
+                    className="w-5 h-5 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-md text-gray-300 hover:text-red-500 opacity-0 group-hover/task:opacity-100 shadow-sm border border-transparent hover:border-red-200 hover:bg-red-50 transition-all hover:scale-110"
+                    title="Hapus Tugas"
+                  >
+                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                  <button
+                    onClick={() => onToggleTaskCompletion(event.id, task.id)}
+                    className="w-5 h-5 flex items-center justify-center rounded-md bg-white border border-gray-300 hover:bg-emerald-50 hover:border-emerald-400 text-gray-200 hover:text-emerald-500 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:ring-offset-1"
+                    title="Tandai Selesai"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -295,7 +310,7 @@ const EventCard = ({
   );
 };
 
-export default function MediaPlanner() {
+export default function App() {
   const [history, setHistory] = useState([{}]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [draggedEventId, setDraggedEventId] = useState(null);
@@ -307,7 +322,6 @@ export default function MediaPlanner() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedViewEvent, setSelectedViewEvent] = useState(null);
 
-  // States for School Events feature
   const [schoolEvents, setSchoolEvents] = useState({});
   const [isSchoolEventModalOpen, setIsSchoolEventModalOpen] = useState(false);
   const [schoolEventForm, setSchoolEventForm] = useState({
@@ -461,21 +475,10 @@ export default function MediaPlanner() {
     }));
   };
 
-  const handleUpdateEventParentType = (eventId, newType) => {
-    updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], parentType: newType } }));
-  };
-
-  const handleUpdateEventTitle = (eventId, newTitle) => {
-    updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], title: newTitle } }));
-  };
-
-  const handleUpdateEventUnit = (eventId, newUnit) => {
-    updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], unit: newUnit } }));
-  };
-
-  const handleUpdateEventColor = (eventId, colorId) => {
-    updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], colorId: colorId } }));
-  };
+  const handleUpdateEventParentType = (eventId, newType) => updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], parentType: newType } }));
+  const handleUpdateEventTitle = (eventId, newTitle) => updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], title: newTitle } }));
+  const handleUpdateEventUnit = (eventId, newUnit) => updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], unit: newUnit } }));
+  const handleUpdateEventColor = (eventId, colorId) => updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], colorId: colorId } }));
 
   const handleDeleteEvent = (eventId) => {
     updateEvents(prev => {
@@ -527,16 +530,12 @@ export default function MediaPlanner() {
     e.dataTransfer.setData('text/plain', eventId);
     e.dataTransfer.effectAllowed = 'move';
     setTimeout(() => {
-      if(e.target && e.target.classList) {
-        e.target.classList.add('opacity-40', 'scale-95');
-      }
+      if(e.target && e.target.classList) e.target.classList.add('opacity-40', 'scale-95');
     }, 0);
   };
 
   const handleDragEnd = (e) => {
-    if(e.target && e.target.classList) {
-      e.target.classList.remove('opacity-40', 'scale-95');
-    }
+    if(e.target && e.target.classList) e.target.classList.remove('opacity-40', 'scale-95');
     setDraggedEventId(null);
   };
 
@@ -548,7 +547,6 @@ export default function MediaPlanner() {
   const handleDrop = (e, targetDateKey) => {
     e.preventDefault();
     const eventId = draggedEventId || e.dataTransfer.getData('text/plain');
-    
     if (eventId && events[eventId]) {
       updateEvents(prev => ({
         ...prev,
@@ -561,27 +559,31 @@ export default function MediaPlanner() {
   const handleOpenSchoolEventModal = () => {
     setSchoolEventForm({
       id: '', nama: '', divisi: DIVISI_OPTIONS[0], isCustomDivisi: false, pic: '', 
-      temaId: '', temaAr: '', temaEn: '', 
-      date: '', endDate: '', waktu: '', lokasi: '', pemateri: '',
-      colorId: 'info'
+      temaId: '', temaAr: '', temaEn: '', date: '', endDate: '', waktu: '', lokasi: '', pemateri: '', colorId: 'info'
     });
     setIsSchoolEventModalOpen(true);
   };
 
+  const handleEditSchoolEvent = (eventData) => {
+    // Determine if divisi is custom
+    const isCustom = !DIVISI_OPTIONS.includes(eventData.divisi);
+    setSchoolEventForm({
+      ...eventData,
+      isCustomDivisi: isCustom
+    });
+    setSelectedViewEvent(null); // Close view modal if it was open
+    setIsSchoolEventModalOpen(true); // Open edit form
+  };
+
   const handleSaveSchoolEvent = (e) => {
     e.preventDefault();
-    const isNew = !schoolEventForm.id;
-    const newId = isNew ? generateId() : schoolEventForm.id;
-    
-    // Ensure endDate logic is sound
+    const newId = schoolEventForm.id || generateId();
     let finalEndDate = schoolEventForm.endDate;
     if (finalEndDate && finalEndDate < schoolEventForm.date) {
-      finalEndDate = schoolEventForm.date; // fallback if user puts end date before start date
+      finalEndDate = schoolEventForm.date; 
     }
-    
     const newEvent = { ...schoolEventForm, id: newId, endDate: finalEndDate };
     const updatedEvents = { ...schoolEvents, [newId]: newEvent };
-    
     setSchoolEvents(updatedEvents);
     syncSchoolEventsToCloud(updatedEvents);
     setIsSchoolEventModalOpen(false);
@@ -593,15 +595,14 @@ export default function MediaPlanner() {
       delete updatedEvents[id];
       setSchoolEvents(updatedEvents);
       syncSchoolEventsToCloud(updatedEvents);
+      if(selectedViewEvent && selectedViewEvent.id === id) setSelectedViewEvent(null);
     }
   };
 
-  // Helper to generate an array of dates between start and end date
   const getDatesInRange = (startDate, endDate) => {
     const dates = [];
     let current = new Date(startDate);
     const end = new Date(endDate);
-    
     while (current <= end) {
       dates.push(current.toISOString().split('T')[0]);
       current.setDate(current.getDate() + 1);
@@ -612,24 +613,22 @@ export default function MediaPlanner() {
   const currentWeekDays = getWeekDays(weekOffset);
   const unassignedEvents = Object.values(events).filter(e => !e.date);
   
-  // Distribute tasks
   const eventsByDate = currentWeekDays.reduce((acc, day) => {
     acc[day.dateKey] = Object.values(events).filter(e => e.date === day.dateKey);
     return acc;
   }, {});
 
-  // Distribute School Events across their date range
   const schoolEventsByDate = currentWeekDays.reduce((acc, day) => {
     acc[day.dateKey] = Object.values(schoolEvents).filter(e => {
       if (!e.date) return false;
       if (!e.endDate) return e.date === day.dateKey;
-      
       const eventDates = getDatesInRange(e.date, e.endDate);
       return eventDates.includes(day.dateKey);
     });
     return acc;
   }, {});
 
+  // Mengumpulkan Tugas yang SELESAI
   const completedTasks = [];
   Object.values(events).forEach(event => {
     if (event.tasks) {
@@ -645,6 +644,26 @@ export default function MediaPlanner() {
       });
     }
   });
+
+  // Mengumpulkan Tugas yang BELUM SELESAI (Hanya yang sudah di kalender)
+  const unfinishedTasks = [];
+  Object.values(events).forEach(event => {
+    if (event.date && event.tasks) { 
+      event.tasks.forEach(task => {
+        if (!task.isCompleted) {
+          unfinishedTasks.push({ 
+            eventId: event.id, 
+            eventTitle: event.parentType === 'Task' ? event.unit : event.title, 
+            eventColor: event.colorId, 
+            date: event.date,
+            task 
+          });
+        }
+      });
+    }
+  });
+  // Urutkan berdasarkan tanggal
+  unfinishedTasks.sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const allSchoolEventsList = Object.values(schoolEvents).sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -679,86 +698,128 @@ export default function MediaPlanner() {
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 bg-white border border-gray-200 p-1 rounded-xl shadow-sm">
-            <button onClick={() => setWeekOffset(prev => prev - 1)} className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" title="Pekan Lalu">
+            <button onClick={() => setWeekOffset(prev => prev - 1)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Pekan Lalu">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
             </button>
             <span className="text-xs font-bold text-gray-700 min-w-[90px] text-center tracking-wide">
               {weekOffset === 0 ? 'PEKAN INI' : weekOffset === -1 ? 'PEKAN LALU' : weekOffset === 1 ? 'PEKAN DEPAN' : `PEKAN ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
             </span>
-            <button onClick={() => setWeekOffset(prev => prev + 1)} className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" title="Pekan Depan">
+            <button onClick={() => setWeekOffset(prev => prev + 1)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Pekan Depan">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"></path></svg>
             </button>
             <div className="w-px h-5 bg-gray-200 mx-1"></div>
-            <button onClick={() => setWeekOffset(0)} className="text-[10px] px-2.5 py-1.5 text-teal-700 font-bold bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors uppercase tracking-wider">HARI INI</button>
+            <button onClick={() => setWeekOffset(0)} className="text-[10px] px-2.5 py-1.5 text-indigo-700 font-bold bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors uppercase tracking-wider">HARI INI</button>
           </div>
 
           <div className="flex bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
             <button 
-              onClick={handleUndo} 
-              disabled={historyIndex === 0}
+              onClick={handleUndo} disabled={historyIndex === 0}
               className={`px-3 py-1.5 rounded-lg flex items-center justify-center transition-all ${historyIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'}`}
               title="Undo"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-            </button>
+            ><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg></button>
             <div className="w-px bg-gray-200 mx-0.5 my-1.5"></div>
             <button 
-              onClick={handleRedo} 
-              disabled={historyIndex === history.length - 1}
+              onClick={handleRedo} disabled={historyIndex === history.length - 1}
               className={`px-3 py-1.5 rounded-lg flex items-center justify-center transition-all ${historyIndex === history.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'}`}
               title="Redo"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"></path></svg>
-            </button>
+            ><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"></path></svg></button>
           </div>
         </div>
       </header>
 
       <div className="flex flex-col xl:flex-row gap-4 flex-1 min-h-0">
         
-        {/* LEFT PANEL: UNASSIGNED BLOCKS */}
-        <div 
-          className="w-full xl:w-64 bg-white rounded-2xl p-4 border border-gray-200 flex flex-col shrink-0 shadow-sm sticky top-[6.5rem] z-30 h-fit" 
-          style={{ maxHeight: 'calc(100vh - 8rem)' }}
-        >
-          <div className="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 py-1">
-            <h2 className="font-extrabold text-gray-800 uppercase text-xs tracking-widest flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-sm"></span> Blok Cadangan
-            </h2>
-            <button
-              onClick={handleCreateEvent}
-              className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg flex items-center gap-1 text-xs font-bold px-3"
-              title="Buat Event Baru"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
-              Baru
-            </button>
-          </div>
+        {/* LEFT PANEL: BLOK CADANGAN & TUGAS BELUM SELESAI */}
+        <div className="w-full xl:w-64 flex flex-col gap-4 shrink-0 z-30">
           
-          <div className="flex-1 overflow-y-auto pr-1 pb-4 custom-scrollbar">
-            {unassignedEvents.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 text-gray-400 text-sm font-medium">
-                Tidak ada blok.<br/><span className="text-xs opacity-75 mt-2 block">Klik tombol "+ Baru" untuk membuat tugas.</span>
-              </div>
-            ) : (
-              unassignedEvents.map(event => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  onUpdateEventParentType={handleUpdateEventParentType}
-                  onUpdateEventTitle={handleUpdateEventTitle}
-                  onUpdateEventUnit={handleUpdateEventUnit}
-                  onUpdateEventColor={handleUpdateEventColor}
-                  onDeleteEvent={handleDeleteEvent}
-                  onAddTask={handleAddTask}
-                  onUpdateTask={handleUpdateTask}
-                  onDeleteTask={handleDeleteTask}
-                  onToggleTaskCompletion={handleToggleTaskCompletion}
-                />
-              ))
-            )}
+          {/* CONTAINER 1: BLOK CADANGAN */}
+          <div className="bg-white rounded-2xl p-4 border border-gray-200 flex flex-col shadow-sm sticky top-[6.5rem] h-fit" style={{ maxHeight: 'calc(50vh - 4.5rem)' }}>
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 py-1 border-b border-gray-100">
+              <h2 className="font-extrabold text-gray-800 uppercase text-xs tracking-widest flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-sm"></span> Blok Cadangan
+              </h2>
+              <button onClick={handleCreateEvent} className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg flex items-center gap-1 text-[10px] font-bold px-2.5" title="Buat Event Baru">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg> Baru
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-1 pb-2 custom-scrollbar">
+              {unassignedEvents.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 text-gray-400 text-xs font-medium">
+                  Tidak ada blok cadangan.<br/><span className="text-[10px] opacity-75 mt-1 block">Klik tombol "+ Baru"</span>
+                </div>
+              ) : (
+                unassignedEvents.map(event => (
+                  <EventCard
+                    key={event.id} event={event} onDragStart={handleDragStart} onDragEnd={handleDragEnd}
+                    onUpdateEventParentType={handleUpdateEventParentType} onUpdateEventTitle={handleUpdateEventTitle}
+                    onUpdateEventUnit={handleUpdateEventUnit} onUpdateEventColor={handleUpdateEventColor}
+                    onDeleteEvent={handleDeleteEvent} onAddTask={handleAddTask} onUpdateTask={handleUpdateTask}
+                    onDeleteTask={handleDeleteTask} onToggleTaskCompletion={handleToggleTaskCompletion}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* CONTAINER 2: TUGAS BELUM SELESAI */}
+          <div className="bg-amber-50/70 rounded-2xl p-4 border border-amber-200 flex flex-col shadow-inner sticky h-fit" style={{ top: 'calc(50vh + 3rem)', maxHeight: 'calc(50vh - 4.5rem)' }}>
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-amber-50/70 py-1 z-10 border-b border-amber-200/50 backdrop-blur-sm">
+              <h2 className="font-extrabold text-amber-800 uppercase text-xs tracking-widest flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm animate-pulse"></span> Menunggu
+              </h2>
+              <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg border border-amber-200 shadow-sm">
+                {unfinishedTasks.length} Tugas
+              </span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-1 pb-2 flex flex-col gap-2.5 custom-scrollbar">
+              {unfinishedTasks.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed border-amber-200/60 rounded-xl text-amber-600/70 text-[11px] font-medium bg-white/40">
+                  Tidak ada tugas tertunda.<br/><span className="text-[10px] opacity-75 mt-1 block">Tarik blok ke kalender.</span>
+                </div>
+              ) : (
+                unfinishedTasks.map(({ eventId, eventTitle, eventColor, date, task }) => {
+                  const colorTab = EVENT_COLORS.find(c => c.id === eventColor)?.tab || 'bg-gray-400';
+                  const member = MEMBER_COLORS[task.assignee] || MEMBER_COLORS['Doni'];
+                  const shortDay = new Date(date).toLocaleDateString('id-ID', {weekday: 'short', day: 'numeric'});
+                  
+                  return (
+                    <div key={`${eventId}-${task.id}`} className="bg-white p-2.5 rounded-xl shadow-sm border border-amber-100 flex flex-col gap-2 group relative overflow-hidden transition-all hover:shadow-md hover:border-amber-300">
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${colorTab}`}></div>
+                      
+                      <div className="flex justify-between items-start pl-2">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate pr-6" title={eventTitle}>
+                          {eventTitle || 'Tanpa Judul'}
+                        </span>
+                        <span className="text-[9px] font-black text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 uppercase tracking-widest absolute right-2 top-2">
+                          {shortDay}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pl-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md shrink-0 ${member.bg} ${member.text} border ${member.border}`}>
+                            {task.assignee}
+                          </span>
+                          <span className="text-[11px] font-bold text-gray-700 truncate">
+                            {task.type || 'Tugas kustom'}
+                          </span>
+                        </div>
+                        
+                        <button
+                          onClick={() => handleToggleTaskCompletion(eventId, task.id)}
+                          className="w-5 h-5 shrink-0 flex items-center justify-center rounded-md bg-white border border-gray-300 hover:bg-emerald-50 hover:border-emerald-400 text-gray-200 hover:text-emerald-500 shadow-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          title="Tandai Selesai"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
 
@@ -766,69 +827,42 @@ export default function MediaPlanner() {
         <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col min-w-0 w-full mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-px bg-gray-100 flex-1">
             {currentWeekDays.map((day, index) => {
-              
               let headerColorClass = "bg-gray-50 border-gray-200 text-gray-700";
               let dropAreaBgClass = "bg-slate-50/20 hover:bg-slate-50/70";
 
-              if (index >= 0 && index <= 2) {
-                headerColorClass = "bg-orange-50 border-orange-100 text-orange-800"; 
-                dropAreaBgClass = "bg-orange-50/10 hover:bg-orange-50/40";
-              } else if (index === 3) {
-                headerColorClass = "bg-red-50 border-red-100 text-red-800";
-                dropAreaBgClass = "bg-red-50/10 hover:bg-red-50/40";
-              } else if (index === 4) {
-                headerColorClass = "bg-green-50 border-green-100 text-green-800";
-                dropAreaBgClass = "bg-green-50/10 hover:bg-green-50/40";
-              } else if (index === 5) {
-                headerColorClass = "bg-blue-50 border-blue-100 text-blue-800";
-                dropAreaBgClass = "bg-blue-50/10 hover:bg-blue-50/40";
-              } else if (index === 6) {
-                headerColorClass = "bg-gray-200 border-gray-300 text-gray-600";
-                dropAreaBgClass = "bg-gray-100/30 hover:bg-gray-100/60";
-              }
+              if (index >= 0 && index <= 2) { headerColorClass = "bg-orange-50 border-orange-100 text-orange-800"; dropAreaBgClass = "bg-orange-50/10 hover:bg-orange-50/40"; } 
+              else if (index === 3) { headerColorClass = "bg-red-50 border-red-100 text-red-800"; dropAreaBgClass = "bg-red-50/10 hover:bg-red-50/40"; } 
+              else if (index === 4) { headerColorClass = "bg-green-50 border-green-100 text-green-800"; dropAreaBgClass = "bg-green-50/10 hover:bg-green-50/40"; } 
+              else if (index === 5) { headerColorClass = "bg-blue-50 border-blue-100 text-blue-800"; dropAreaBgClass = "bg-blue-50/10 hover:bg-blue-50/40"; } 
+              else if (index === 6) { headerColorClass = "bg-gray-200 border-gray-300 text-gray-600"; dropAreaBgClass = "bg-gray-100/30 hover:bg-gray-100/60"; }
 
               const isToday = day.dateKey === new Date().toISOString().split('T')[0];
               const daySchoolEvents = schoolEventsByDate[day.dateKey] || [];
 
               return (
-                <div
-                  key={day.dateKey}
-                  className="bg-white min-h-[600px] flex flex-col h-full transition-all group/day"
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, day.dateKey)}
-                >
+                <div key={day.dateKey} className="bg-white min-h-[600px] flex flex-col h-full transition-all group/day" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, day.dateKey)}>
                   <div className={`p-3 border-b flex justify-center items-center shadow-sm relative ${headerColorClass}`}>
-                    {isToday && (
-                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                    )}
+                    {isToday && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>}
                     <h3 className={`text-[13px] tracking-wide ${isToday ? 'font-extrabold' : 'font-bold'}`}>{day.display}</h3>
                   </div>
                   
                   <div className={`flex-1 p-2 transition-colors flex flex-col h-full ${dropAreaBgClass}`}>
                     {daySchoolEvents.map(seEvent => (
                       <SchoolEventCard 
-                        key={`${seEvent.id}-${day.dateKey}`} 
-                        event={seEvent} 
+                        key={`${seEvent.id}-${day.dateKey}`} event={seEvent} 
                         onDelete={() => handleDeleteSchoolEvent(seEvent.id)}
                         onView={setSelectedViewEvent}
+                        onEdit={handleEditSchoolEvent}
                       />
                     ))}
 
                     {eventsByDate[day.dateKey].map(event => (
                       <EventCard
-                        key={event.id}
-                        event={event}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        onUpdateEventParentType={handleUpdateEventParentType}
-                        onUpdateEventTitle={handleUpdateEventTitle}
-                        onUpdateEventUnit={handleUpdateEventUnit}
-                        onUpdateEventColor={handleUpdateEventColor}
-                        onDeleteEvent={handleDeleteEvent}
-                        onAddTask={handleAddTask}
-                        onUpdateTask={handleUpdateTask}
-                        onDeleteTask={handleDeleteTask}
-                        onToggleTaskCompletion={handleToggleTaskCompletion}
+                        key={event.id} event={event} onDragStart={handleDragStart} onDragEnd={handleDragEnd}
+                        onUpdateEventParentType={handleUpdateEventParentType} onUpdateEventTitle={handleUpdateEventTitle}
+                        onUpdateEventUnit={handleUpdateEventUnit} onUpdateEventColor={handleUpdateEventColor}
+                        onDeleteEvent={handleDeleteEvent} onAddTask={handleAddTask} onUpdateTask={handleUpdateTask}
+                        onDeleteTask={handleDeleteTask} onToggleTaskCompletion={handleToggleTaskCompletion}
                       />
                     ))}
                     
@@ -847,20 +881,13 @@ export default function MediaPlanner() {
         {/* RIGHT PANEL: SCHOOL EVENTS & COMPLETED TASKS */}
         <div className="w-full xl:w-[17rem] flex flex-col gap-4 shrink-0 z-30">
           
-          {/* CONTAINER 1: EVENT SEKOLAH LIST */}
-          <div 
-            className="bg-white rounded-2xl p-4 border border-gray-200 flex flex-col shadow-sm sticky top-[6.5rem] h-fit"
-            style={{ maxHeight: 'calc(50vh - 4.5rem)' }}
-          >
+          {/* CONTAINER 3: EVENT SEKOLAH LIST */}
+          <div className="bg-white rounded-2xl p-4 border border-gray-200 flex flex-col shadow-sm sticky top-[6.5rem] h-fit" style={{ maxHeight: 'calc(50vh - 4.5rem)' }}>
             <div className="flex justify-between items-center mb-4 sticky top-0 bg-white py-1 z-10 border-b border-gray-100">
               <h2 className="font-extrabold text-gray-800 uppercase text-xs tracking-widest flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-400 shadow-sm"></span> Event Sekolah
+                <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm"></span> Event Sekolah
               </h2>
-              <button
-                onClick={handleOpenSchoolEventModal}
-                className="p-1.5 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors border border-orange-200 flex items-center justify-center"
-                title="Tambah Event Sekolah Baru"
-              >
+              <button onClick={handleOpenSchoolEventModal} className="p-1.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors border border-purple-200 flex items-center justify-center" title="Tambah Event Sekolah Baru">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
               </button>
             </div>
@@ -878,25 +905,20 @@ export default function MediaPlanner() {
                   const hasEndDate = se.endDate && se.endDate !== se.date;
 
                   return (
-                    <div 
-                      key={se.id} 
-                      onClick={() => setSelectedViewEvent(se)}
-                      className={`p-2.5 rounded-xl border flex flex-col gap-1.5 group relative transition-all cursor-pointer hover:shadow-md ${activeColor.bg} ${activeColor.border} ${isPast ? 'opacity-60 grayscale-[50%]' : ''}`}
-                    >
+                    <div key={se.id} onClick={() => setSelectedViewEvent(se)} className={`p-2.5 rounded-xl border flex flex-col gap-1.5 group relative transition-all cursor-pointer hover:shadow-md ${activeColor.bg} ${activeColor.border} ${isPast ? 'opacity-60 grayscale-[50%]' : ''}`}>
                       <div className="flex justify-between items-start">
-                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-600 bg-white/60 px-1.5 py-0.5 rounded border border-indigo-100 shadow-sm">
+                        <span className={`text-[9px] font-extrabold uppercase tracking-widest text-white ${activeColor.tab} px-1.5 py-0.5 rounded shadow-sm`}>
                           {se.divisi}
                         </span>
                         {hasEndDate && (
-                          <span className="text-[9px] font-bold text-gray-500 flex items-center gap-0.5">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            Multi-hari
+                          <span className="text-[9px] font-bold text-gray-500 flex items-center gap-0.5 bg-white/80 px-1 rounded border border-gray-100">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> Multi-hari
                           </span>
                         )}
                       </div>
                       <h4 className="text-[11px] font-bold text-gray-800 leading-snug line-clamp-2">{se.nama}</h4>
                       <p className="text-[10px] font-semibold text-gray-600 flex items-center gap-1">
-                        <svg className="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <svg className={`w-3 h-3 ${activeColor.tab.replace('bg-', 'text-')}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         {new Date(se.date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
                       </p>
                     </div>
@@ -906,13 +928,10 @@ export default function MediaPlanner() {
             </div>
           </div>
 
-          {/* CONTAINER 2: SELESAI */}
-          <div 
-            className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 flex flex-col shadow-inner sticky h-fit"
-            style={{ top: 'calc(50vh + 3rem)', maxHeight: 'calc(50vh - 4.5rem)' }}
-          >
-            <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-50/80 py-1 z-10 border-b border-slate-200 backdrop-blur-sm">
-              <h2 className="font-extrabold text-slate-700 uppercase text-xs tracking-widest flex items-center gap-2">
+          {/* CONTAINER 4: SELESAI */}
+          <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 flex flex-col shadow-inner sticky h-fit" style={{ top: 'calc(50vh + 3rem)', maxHeight: 'calc(50vh - 4.5rem)' }}>
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-emerald-50/80 py-1 z-10 border-b border-emerald-100 backdrop-blur-sm">
+              <h2 className="font-extrabold text-emerald-800 uppercase text-xs tracking-widest flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm animate-pulse"></span> Selesai
               </h2>
               <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-200 shadow-sm">
@@ -922,7 +941,7 @@ export default function MediaPlanner() {
             
             <div className="flex-1 overflow-y-auto pr-1 pb-2 flex flex-col gap-2.5 custom-scrollbar">
               {completedTasks.length === 0 ? (
-                <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-[11px] font-medium bg-white/50">
+                <div className="text-center py-8 border-2 border-dashed border-emerald-200/60 rounded-xl text-emerald-600/70 text-[11px] font-medium bg-white/40">
                   Belum ada tugas selesai.<br/><span className="text-[10px] opacity-75 mt-1 block">Centang tugas di kalender.</span>
                 </div>
               ) : (
@@ -930,16 +949,16 @@ export default function MediaPlanner() {
                   const colorTab = EVENT_COLORS.find(c => c.id === eventColor)?.tab || 'bg-gray-400';
                   const member = MEMBER_COLORS[task.assignee] || MEMBER_COLORS['Doni'];
                   return (
-                    <div key={task.id} className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-2 group relative overflow-hidden transition-all hover:shadow-md hover:border-emerald-200">
+                    <div key={task.id} className="bg-white p-2.5 rounded-xl shadow-sm border border-emerald-100 flex flex-col gap-2 group relative overflow-hidden transition-all hover:shadow-md hover:border-emerald-300">
                       <div className={`absolute left-0 top-0 bottom-0 w-1 ${colorTab}`}></div>
                       
                       <div className="flex justify-between items-start pl-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate pr-6" title={eventTitle}>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate pr-6" title={eventTitle}>
                           {eventTitle || 'Tanpa Judul'}
                         </span>
                         <button
                           onClick={() => handleToggleTaskCompletion(eventId, task.id)}
-                          className="text-slate-300 hover:text-amber-600 bg-slate-50 hover:bg-amber-50 border border-transparent hover:border-amber-200 rounded p-1 opacity-0 group-hover:opacity-100 transition-all absolute right-2 top-2 shadow-sm"
+                          className="text-gray-300 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 border border-transparent hover:border-amber-200 rounded p-1 opacity-0 group-hover:opacity-100 transition-all absolute right-2 top-2 shadow-sm"
                           title="Batal Selesai (Kembalikan)"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
@@ -947,10 +966,10 @@ export default function MediaPlanner() {
                       </div>
                       
                       <div className="flex items-center gap-2 pl-2">
-                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${member.bg} ${member.text} border ${member.border}`}>
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md shrink-0 ${member.bg} ${member.text} border ${member.border}`}>
                           {task.assignee}
                         </span>
-                        <span className="text-[11px] font-semibold text-slate-500 line-through decoration-slate-300 truncate">
+                        <span className="text-[11px] font-semibold text-gray-500 line-through decoration-gray-300 truncate">
                           {task.type || 'Tugas kustom'}
                         </span>
                       </div>
@@ -964,13 +983,13 @@ export default function MediaPlanner() {
         </div>
       </div>
 
-      {/* MODALS */}
+      {}
       {isSchoolEventModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h3 className="font-extrabold text-gray-800 text-lg flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-orange-400 shadow-sm"></span> Form Event Sekolah
+                <span className="w-3 h-3 rounded-full bg-purple-500 shadow-sm"></span> {schoolEventForm.id ? 'Edit Event Sekolah' : 'Form Event Sekolah'}
               </h3>
               <button onClick={() => setIsSchoolEventModalOpen(false)} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl p-2 transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -1056,7 +1075,7 @@ export default function MediaPlanner() {
 
                 <div className="md:col-span-3">
                   <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Warna Kartu Event</label>
-                  <div className="flex gap-2.5 bg-white p-3 rounded-xl border border-gray-200 shadow-sm w-fit">
+                  <div className="flex flex-wrap gap-2.5 bg-white p-3 rounded-xl border border-gray-200 shadow-sm w-fit">
                     {EVENT_COLORS.map(color => (
                       <button
                         key={color.id}
@@ -1074,7 +1093,7 @@ export default function MediaPlanner() {
             <div className="p-5 bg-white border-t border-gray-100 flex justify-end gap-3 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)] z-10">
               <button type="button" onClick={() => setIsSchoolEventModalOpen(false)} className="px-5 py-2.5 text-xs font-extrabold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Batal</button>
               <button type="submit" form="schoolEventForm" disabled={!schoolEventForm.nama || !schoolEventForm.date} className="px-6 py-2.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-[0_4px_12px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_16px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                Simpan ke Kalender
+                {schoolEventForm.id ? 'Simpan Perubahan' : 'Simpan ke Kalender'}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
               </button>
             </div>
@@ -1090,11 +1109,16 @@ export default function MediaPlanner() {
                 <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 </div>
-                Detail Event Sekolah
+                Detail Event
               </h3>
-              <button onClick={() => setSelectedViewEvent(null)} className="text-white/70 hover:text-white bg-black/10 hover:bg-black/20 rounded-xl p-2 transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => handleEditSchoolEvent(selectedViewEvent)} className="text-white hover:text-white bg-black/10 hover:bg-black/20 rounded-xl px-3 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> Edit
+                </button>
+                <button onClick={() => setSelectedViewEvent(null)} className="text-white/70 hover:text-white bg-black/10 hover:bg-black/20 rounded-xl p-1.5 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
             </div>
             
             <div className="p-6 overflow-y-auto flex-1 custom-scrollbar flex flex-col gap-5 bg-slate-50/50">

@@ -360,38 +360,69 @@ export default function App() {
     
     setSyncStatus('Menyinkronkan...');
     
-    // UBAH BARIS INI: Hapus bagian 'users', user.uid
-    // Menjadi brankas global bernama 'team_workspace'
-    const plannerRef = doc(db, 'artifacts', appId, 'team_workspace', 'planner');
+    // 1 & 2. FUNGSI BACA (READ) DARI TEAM WORKSPACE
+    const plannerRef = doc(db, 'artifacts', appId, 'team_workspace', 'planner_events');
     const schoolEventsRef = doc(db, 'artifacts', appId, 'team_workspace', 'school_events');
     
     const unsubPlanner = onSnapshot(plannerRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data().events;
+        if (data) {
+          setHistory(prev => {
+            const currentStr = JSON.stringify(prev[historyIndex] || {});
+            const newStr = JSON.stringify(data);
+            if (currentStr !== newStr) {
+               setHistoryIndex(0);
+               return [data];
+            }
+            return prev;
+          });
+        }
+      } else {
+        // Jika database global kosong, buat data awal
+        const initialEventId = generateId();
+        const currentWeekDays = getWeekDays(0);
+        const mondayDateKey = currentWeekDays[1].dateKey;
+        const defaultEvent = {
+          [initialEventId]: {
+            id: initialEventId,
+            parentType: 'Event',
+            title: 'Konten IG Reels & Story',
+            unit: UNIT_OPTIONS[0],
+            date: mondayDateKey, 
+            colorId: 'medium',
+            tasks: [
+              { id: generateId(), assignee: 'Rica', type: 'Reporting', isCustom: false, isCompleted: false },
+              { id: generateId(), assignee: 'Ersady', type: 'Reels', isCustom: false, isCompleted: false } 
+            ]
+          }
+        };
+        setHistory([defaultEvent]);
+        setHistoryIndex(0);
+        setDoc(plannerRef, { events: defaultEvent }).catch(console.error);
+      }
+      setIsDataLoaded(true);
+      setSyncStatus('Cloud Aktif');
+    }, (error) => {
+      console.error("Database sync error:", error);
+      setSyncStatus('Offline Mode');
+      setIsDataLoaded(true);
+    });
 
-// ... existing code ...
+    const unsubSchoolEvents = onSnapshot(schoolEventsRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data().events;
+        if (data) setSchoolEvents(data);
+      }
+    }, console.error);
 
-  const syncToCloud = (eventsToSync) => {
-    if (user) {
-      setSyncStatus('Menyimpan...');
-      // UBAH BARIS INI JUGA: Samakan dengan yang di atas
-      const docRef = doc(db, 'artifacts', appId, 'team_workspace', 'planner');
-      setDoc(docRef, { events: eventsToSync })
-        .then(() => setSyncStatus('Tersimpan'))
-        .catch(() => setSyncStatus('Gagal Simpan'));
-    }
-  };
-
-  const syncSchoolEventsToCloud = (newSchoolEvents) => {
-    if (user) {
-      // UBAH BARIS INI JUGA: Samakan dengan yang di atas
-      const docRef = doc(db, 'artifacts', appId, 'team_workspace', 'school_events');
-      setDoc(docRef, { events: newSchoolEvents }).catch(console.error);
-    }
+    return () => { unsubPlanner(); unsubSchoolEvents(); };
   }, [user]);
 
   const syncToCloud = (eventsToSync) => {
     if (user) {
       setSyncStatus('Menyimpan...');
-      // Menggunakan brankas tim global untuk tugas/planner
+      // 3. FUNGSI TULIS (WRITE) TUGAS KE TEAM WORKSPACE
       const docRef = doc(db, 'artifacts', appId, 'team_workspace', 'planner_events');
       setDoc(docRef, { events: eventsToSync })
         .then(() => setSyncStatus('Tersimpan'))
@@ -401,7 +432,7 @@ export default function App() {
 
   const syncSchoolEventsToCloud = (newSchoolEvents) => {
     if (user) {
-      // Menggunakan brankas tim global untuk event sekolah
+      // 4. FUNGSI TULIS (WRITE) EVENT SEKOLAH KE TEAM WORKSPACE
       const docRef = doc(db, 'artifacts', appId, 'team_workspace', 'school_events');
       setDoc(docRef, { events: newSchoolEvents }).catch(console.error);
     }

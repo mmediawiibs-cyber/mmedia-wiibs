@@ -355,8 +355,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // ... existing code ...
-
   useEffect(() => {
     if (!user) return;
     
@@ -389,17 +387,6 @@ export default function App() {
       setDoc(docRef, { events: newSchoolEvents }).catch(console.error);
     }
   };
-
-// ... existing code ...
-```eof
-
-**Apa yang terjadi setelah ini diubah?**
-Begitu Anda menyimpan kode ini dan melakukan *Push* ke Vercel:
-1. Mulai sekarang, aplikasi tidak akan lagi peduli siapa yang *login* atau pakai perangkat apa.
-2. PC Anda, Laptop Anda, maupun HP teman-teman tim Anda akan menembak ke folder database yang sama yaitu folder: `team_workspace`.
-3. Jika Anda mengetik tugas di PC, tugas itu akan langsung *muncul (real-time)* di layar Laptop Anda detik itu juga!
-
-Silakan diubah alamat databasenya dan buktikan sendiri sinkronisasinya! 🔥
 
   const syncToCloud = (eventsToSync) => {
     if (user) {

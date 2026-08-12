@@ -26,11 +26,14 @@ const EVENT_COLORS = [
 const UNIT_OPTIONS = ['Asset Management', 'Content Creator', 'Design Graphic'];
 
 const TASK_TYPES = [
-  'Dokumentasi', 'Carousel', 'Fotoshoot', 'Reels', 'Story', 
-  'Aftermovie', 'Short Video', 'Nesting Asset', 'Video Rekap', 
-  'Streaming', 'Operator', 'Taping', 'Recording', 'BTS', 
-  'Reporting', 'Posting'
+  'Desain Flyer', 'Desain Banner', 'Desain Bumper', 'Desain Infografis', 'Video Promosi/CTA',
+  'Dokumentasi', 'Story', 'photobooth', 'Streaming', 'Operator',
+  'Asseting','Carousel', 'Reels', 'Aftermovie', 'Short Video', 'Video Rekap', 
+  'Taping', 'Recording', 'Layouting', 'Editing', 
+  'Publishing', 'Copywriting',
 ];
+
+const DIVISI_OPTIONS = ['SMP Banin', 'SMA Banin', 'SMP Banat', 'SMA Banat', 'STIT', 'SDTQ', 'Biro Bekal', 'BK', 'Balitbangwas', 'Marketing'];
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -47,7 +50,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'mmedia-wiibs-app';
+const rawAppId = typeof __app_id !== 'undefined' ? __app_id : 'mmedia-wiibs-app';
+const appId = rawAppId.replace(/\//g, '-'); 
 
 const getWeekDays = (weekOffset) => {
   const today = new Date();
@@ -68,6 +72,42 @@ const getWeekDays = (weekOffset) => {
     days.push({ dateKey, display });
   }
   return days;
+};
+
+const SchoolEventCard = ({ event, onDelete, onView }) => {
+  const activeColor = EVENT_COLORS.find(c => c.id === (event.colorId || 'info')) || EVENT_COLORS[4];
+  
+  return (
+    <div className={`${activeColor.bg} border ${activeColor.border} border-l-4 rounded-xl shadow-sm p-3 mb-3 relative group overflow-hidden transition-all hover:shadow-md`} style={{ borderLeftColor: activeColor.tab.replace('bg-', '') }}>
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={() => onView(event)} className="text-gray-400 hover:text-indigo-600 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-indigo-200" title="Lihat Detail">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+        </button>
+        <button onClick={onDelete} className="text-gray-400 hover:text-red-500 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-red-100" title="Hapus Event">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      
+      <div className="mb-2 pr-12">
+        <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-600 bg-white/60 px-2 py-0.5 rounded-md border border-indigo-100 shadow-sm">{event.divisi}</span>
+      </div>
+      
+      <h4 className="text-sm font-bold text-gray-800 leading-tight mb-2 pr-2">{event.nama}</h4>
+      
+      <div className="flex flex-col gap-1.5 text-[11px] text-gray-600 bg-white/60 p-2 rounded-lg border border-white/50">
+        <div className="flex items-start gap-1.5">
+           <svg className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+           <span className="font-semibold">{event.waktu || 'Waktu belum ditentukan'}</span>
+        </div>
+        {event.lokasi && (
+          <div className="flex items-start gap-1.5 border-t border-gray-100/50 pt-1.5 mt-0.5">
+             <svg className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+             <span className="truncate" title={event.lokasi}>{event.lokasi}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 const EventCard = ({
@@ -167,9 +207,10 @@ const EventCard = ({
             <div key={task.id} className="flex relative group/task border-b border-gray-100 last:border-b-0">
               <button 
                 onClick={() => onDeleteTask(event.id, task.id)}
-                className="absolute -top-2 -right-2 z-10 bg-white rounded-full p-0.5 text-gray-400 hover:text-red-500 opacity-0 group-hover/task:opacity-100 shadow-md border border-gray-200 transition-all hover:scale-110"
+                className="absolute -top-2 -right-1 z-10 bg-white/90 backdrop-blur-sm rounded-md p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover/task:opacity-100 shadow-sm border border-gray-200 transition-all hover:scale-110 hover:border-red-200"
+                title="Hapus Baris"
               >
-                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
               
               <div className={`w-[35%] p-1 border-r border-gray-100 flex flex-col justify-center transition-colors ${memberStyle.bg} ${memberStyle.text}`}>
@@ -264,14 +305,17 @@ export default function MediaPlanner() {
   const [syncStatus, setSyncStatus] = useState('Menghubungkan...');
 
   const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedViewEvent, setSelectedViewEvent] = useState(null);
 
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [isChatLoading, setIsChatLoading] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { role: 'model', parts: [{ text: 'Halo! Saya WIIBS AI Assistant. Ada yang bisa saya bantu hari ini?\n\n💡 Ketik pertanyaan biasa untuk obrolan umum, atau awali pesan dengan "/konten" untuk mengaktifkan mode Creative Director (pembuatan naskah video/Reels)!' }] }
-  ]);
-  const chatEndRef = useRef(null);
+  // States for School Events feature
+  const [schoolEvents, setSchoolEvents] = useState({});
+  const [isSchoolEventModalOpen, setIsSchoolEventModalOpen] = useState(false);
+  const [schoolEventForm, setSchoolEventForm] = useState({
+    id: '', nama: '', divisi: DIVISI_OPTIONS[0], isCustomDivisi: false, pic: '', 
+    temaId: '', temaAr: '', temaEn: '', 
+    date: '', endDate: '', waktu: '', lokasi: '', pemateri: '',
+    colorId: 'info'
+  });
 
   const events = history[historyIndex] || {}; 
 
@@ -296,9 +340,10 @@ export default function MediaPlanner() {
     if (!user) return;
     
     setSyncStatus('Menyinkronkan...');
-    const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'planner', 'events');
+    const plannerRef = doc(db, 'artifacts', appId, 'users', user.uid, 'planner', 'events');
+    const schoolEventsRef = doc(db, 'artifacts', appId, 'users', user.uid, 'planner', 'school_events');
     
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    const unsubPlanner = onSnapshot(plannerRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data().events;
         if (data) {
@@ -332,7 +377,7 @@ export default function MediaPlanner() {
         };
         setHistory([defaultEvent]);
         setHistoryIndex(0);
-        setDoc(docRef, { events: defaultEvent }).catch(console.error);
+        setDoc(plannerRef, { events: defaultEvent }).catch(console.error);
       }
       setIsDataLoaded(true);
       setSyncStatus('Cloud Aktif');
@@ -342,7 +387,14 @@ export default function MediaPlanner() {
       setIsDataLoaded(true);
     });
 
-    return () => unsubscribe();
+    const unsubSchoolEvents = onSnapshot(schoolEventsRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data().events;
+        if (data) setSchoolEvents(data);
+      }
+    }, console.error);
+
+    return () => { unsubPlanner(); unsubSchoolEvents(); };
   }, [user]);
 
   const syncToCloud = (eventsToSync) => {
@@ -352,6 +404,13 @@ export default function MediaPlanner() {
       setDoc(docRef, { events: eventsToSync })
         .then(() => setSyncStatus('Tersimpan'))
         .catch(() => setSyncStatus('Gagal Simpan'));
+    }
+  };
+
+  const syncSchoolEventsToCloud = (newSchoolEvents) => {
+    if (user) {
+      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'planner', 'school_events');
+      setDoc(docRef, { events: newSchoolEvents }).catch(console.error);
     }
   };
 
@@ -386,123 +445,6 @@ export default function MediaPlanner() {
     }
   };
 
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatMessages, isChatOpen]);
-
-  const handleSendChatMessage = async () => {
-    if (!chatInput.trim()) return;
-
-    const newUserMsg = { role: 'user', parts: [{ text: chatInput }] };
-    const newHistory = [...chatMessages, newUserMsg];
-    setChatMessages(newHistory);
-    setChatInput('');
-    setIsChatLoading(true);
-
-    try {
-      // 🔑 MASUKKAN API KEY ANDA DI SINI
-      const apiKey = "AIzaSyAF7lw8y7cM3AXypyV4LW0di1vtg6xAY5g"; 
-      
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
-
-      const isContentMode = chatInput.trim().toLowerCase().startsWith('/konten');
-
-      let systemPrompt = "";
-
-      if (isContentMode) {
-        systemPrompt = `Anda adalah Creative Director untuk konten media sosial sekolah Islam Internasional (Salaf).
-
-Setiap pesan dari saya adalah permintaan naskah konten video (Reels).
-Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati atau edukatif, bukan sekadar visual kosong.
-
-**IDENTITAS & BATASAN (MUTLAK):**
-1.  **Peran:** Saya Kabag Media. Target audiens adalah Wali Santri dan Calon Wali Santri.
-2.  **Subjek Utama:** Divisi Banat (Akhwat).
-    * **Visual:** Wajib Berniqab/Bercadar.
-    * **Talent:** Santriwati atau Ustadzah.
-    * **Bahasa:** Dialog talent wajib **Bahasa Arab** atau **Inggris** (tunjukkan kesan International School), sertakan terjemahan Indonesia di naskah.
-3.  **Audio:** Tanpa musik. Hanya suara asli (ASMR), Dialog, dan Nasheed Vokal (Acapella).
-4.  **Tone:** Berkelas, Syar'i, namun tetap relate dengan kehidupan remaja gen-Z yang islami.
-
-**FORMAT RESPON (WAJIB IKUTI STRUKTUR INI):**
-
-**1. JUDUL & HOOK**
-* **Judul:** (Singkat)
-* **Hook Visual/Audio:** (Detik pertama yang membuat orang berhenti scroll).
-
-**2. SKENARIO DRAMA (SCENE BY SCENE)**
-* Fokus pada *Directing Talent*: Apa yang mereka lakukan dan apa yang mereka katakan.
-* **Format:**
-    * *Scene 1:* [Deskripsi singkat situasi]
-    * *Talent A (Arab/Inggris):* "..." (Terjemahan: ...)
-    * *Talent B (Arab/Inggris):* "..." (Terjemahan: ...)
-    * *Scene 2:* [Resolusi/Ending]
-
-**3. AUDIO ATMOSPHERE**
-* Saran Nasheed (Vokal Only) atau Sound Effect (misal: suara hujan, langkah kaki, bel sekolah).
-
-**4. DRAFT COPYWRITING (3 JENIS)**
-* **A. Caption Instagram:** (Lengkap dengan headline dan hashtag).
-* **B. Broadcast Pra-Acara/Teaser:** (Teks pendek untuk disebar di grup WA Wali Santri/Internal *sebelum* video tayang/saat proses syuting untuk membangun hype).
-* **C. Broadcast Share Link:** (Teks persuasif untuk disebar di grup saat video *sudah* diposting agar orang mau klik).`;
-      } else {
-        systemPrompt = "Anda adalah Asisten AI khusus untuk departemen media 'MMedia WIIBS'. Gunakan bahasa Indonesia yang asik, gaul, namun tetap profesional. Tugas Anda adalah membantu manajer mengatur jadwal, memberikan ide konten kreatif umum, dan memberi saran produktivitas. Fokus jawaban Anda seputar dunia broadcasting, desain grafis, dan manajemen tim media. Jika pengguna ingin skenario drama/Reels spesifik, beritahu mereka untuk menggunakan perintah '/konten' di awal pesan.";
-      }
-
-      const payload = {
-        contents: newHistory,
-        systemInstruction: {
-          parts: [{ text: systemPrompt }]
-        }
-      };
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json();
-      
-      if (result.error) {
-         setChatMessages(prev => [...prev, { role: 'model', parts: [{ text: `Error: ${result.error.message || 'API Key mungkin tidak valid atau kosong.'}` }] }]);
-      } else if (result.candidates && result.candidates[0].content) {
-          setChatMessages(prev => [...prev, result.candidates[0].content]);
-      } else {
-          setChatMessages(prev => [...prev, { role: 'model', parts: [{ text: 'Maaf, respons dari AI kosong atau tidak sesuai.' }] }]);
-      }
-    } catch (error) {
-      setChatMessages(prev => [...prev, { role: 'model', parts: [{ text: 'Terjadi kesalahan jaringan atau koneksi API. Pastikan API Key sudah dimasukkan dengan benar.' }] }]);
-    } finally {
-      setIsChatLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (history.length === 1 && Object.keys(history[0]).length === 0) {
-      const initialEventId = generateId();
-      const currentWeekDays = getWeekDays(0);
-      const mondayDateKey = currentWeekDays[1].dateKey;
-
-      setHistory([{
-        [initialEventId]: {
-          id: initialEventId,
-          parentType: 'Event',
-          title: 'Konten IG Reels & Story',
-          unit: UNIT_OPTIONS[0],
-          date: mondayDateKey, 
-          colorId: 'medium',
-          tasks: [
-            { id: generateId(), assignee: 'Rica', type: 'Reporting', isCustom: false, isCompleted: false },
-            { id: generateId(), assignee: 'Ersady', type: 'Reels', isCustom: false, isCompleted: false } 
-          ]
-        }
-      }]);
-    }
-  }, []);
-
   const handleCreateEvent = () => {
     const newId = generateId();
     updateEvents(prev => ({
@@ -520,31 +462,19 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
   };
 
   const handleUpdateEventParentType = (eventId, newType) => {
-    updateEvents(prev => ({
-      ...prev,
-      [eventId]: { ...prev[eventId], parentType: newType }
-    }));
+    updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], parentType: newType } }));
   };
 
   const handleUpdateEventTitle = (eventId, newTitle) => {
-    updateEvents(prev => ({
-      ...prev,
-      [eventId]: { ...prev[eventId], title: newTitle }
-    }));
+    updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], title: newTitle } }));
   };
 
   const handleUpdateEventUnit = (eventId, newUnit) => {
-    updateEvents(prev => ({
-      ...prev,
-      [eventId]: { ...prev[eventId], unit: newUnit }
-    }));
+    updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], unit: newUnit } }));
   };
 
   const handleUpdateEventColor = (eventId, colorId) => {
-    updateEvents(prev => ({
-      ...prev,
-      [eventId]: { ...prev[eventId], colorId: colorId }
-    }));
+    updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], colorId: colorId } }));
   };
 
   const handleDeleteEvent = (eventId) => {
@@ -571,13 +501,8 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
   const handleUpdateTask = (eventId, taskId, updates) => {
     updateEvents(prev => {
       const event = prev[eventId];
-      const updatedTasks = event.tasks.map(task => 
-        task.id === taskId ? { ...task, ...updates } : task
-      );
-      return {
-        ...prev,
-        [eventId]: { ...event, tasks: updatedTasks }
-      };
+      const updatedTasks = event.tasks.map(task => task.id === taskId ? { ...task, ...updates } : task);
+      return { ...prev, [eventId]: { ...event, tasks: updatedTasks } };
     });
   };
 
@@ -585,23 +510,15 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
     updateEvents(prev => {
       const event = prev[eventId];
       const filteredTasks = event.tasks.filter(task => task.id !== taskId);
-      return {
-        ...prev,
-        [eventId]: { ...event, tasks: filteredTasks }
-      };
+      return { ...prev, [eventId]: { ...event, tasks: filteredTasks } };
     });
   };
 
   const handleToggleTaskCompletion = (eventId, taskId) => {
     updateEvents(prev => {
       const event = prev[eventId];
-      const updatedTasks = event.tasks.map(task => 
-        task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task
-      );
-      return {
-        ...prev,
-        [eventId]: { ...event, tasks: updatedTasks }
-      };
+      const updatedTasks = event.tasks.map(task => task.id === taskId ? { ...task, isCompleted: !task.isCompleted } : task);
+      return { ...prev, [eventId]: { ...event, tasks: updatedTasks } };
     });
   };
 
@@ -641,11 +558,75 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
     setDraggedEventId(null);
   };
 
+  const handleOpenSchoolEventModal = () => {
+    setSchoolEventForm({
+      id: '', nama: '', divisi: DIVISI_OPTIONS[0], isCustomDivisi: false, pic: '', 
+      temaId: '', temaAr: '', temaEn: '', 
+      date: '', endDate: '', waktu: '', lokasi: '', pemateri: '',
+      colorId: 'info'
+    });
+    setIsSchoolEventModalOpen(true);
+  };
+
+  const handleSaveSchoolEvent = (e) => {
+    e.preventDefault();
+    const isNew = !schoolEventForm.id;
+    const newId = isNew ? generateId() : schoolEventForm.id;
+    
+    // Ensure endDate logic is sound
+    let finalEndDate = schoolEventForm.endDate;
+    if (finalEndDate && finalEndDate < schoolEventForm.date) {
+      finalEndDate = schoolEventForm.date; // fallback if user puts end date before start date
+    }
+    
+    const newEvent = { ...schoolEventForm, id: newId, endDate: finalEndDate };
+    const updatedEvents = { ...schoolEvents, [newId]: newEvent };
+    
+    setSchoolEvents(updatedEvents);
+    syncSchoolEventsToCloud(updatedEvents);
+    setIsSchoolEventModalOpen(false);
+  };
+
+  const handleDeleteSchoolEvent = (id) => {
+    if(window.confirm('Yakin ingin menghapus event sekolah ini?')) {
+      const updatedEvents = { ...schoolEvents };
+      delete updatedEvents[id];
+      setSchoolEvents(updatedEvents);
+      syncSchoolEventsToCloud(updatedEvents);
+    }
+  };
+
+  // Helper to generate an array of dates between start and end date
+  const getDatesInRange = (startDate, endDate) => {
+    const dates = [];
+    let current = new Date(startDate);
+    const end = new Date(endDate);
+    
+    while (current <= end) {
+      dates.push(current.toISOString().split('T')[0]);
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  };
+
   const currentWeekDays = getWeekDays(weekOffset);
   const unassignedEvents = Object.values(events).filter(e => !e.date);
   
+  // Distribute tasks
   const eventsByDate = currentWeekDays.reduce((acc, day) => {
     acc[day.dateKey] = Object.values(events).filter(e => e.date === day.dateKey);
+    return acc;
+  }, {});
+
+  // Distribute School Events across their date range
+  const schoolEventsByDate = currentWeekDays.reduce((acc, day) => {
+    acc[day.dateKey] = Object.values(schoolEvents).filter(e => {
+      if (!e.date) return false;
+      if (!e.endDate) return e.date === day.dateKey;
+      
+      const eventDates = getDatesInRange(e.date, e.endDate);
+      return eventDates.includes(day.dateKey);
+    });
     return acc;
   }, {});
 
@@ -665,13 +646,15 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
     }
   });
 
+  const allSchoolEventsList = Object.values(schoolEvents).sort((a, b) => new Date(a.date) - new Date(b.date));
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-3 md:p-5 flex flex-col relative overflow-x-hidden">
       
       <header className="sticky top-2 z-40 bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-3 md:px-5 flex flex-col md:flex-row justify-between items-center mb-6 ring-1 ring-black/5">
         <div className="flex items-center gap-4 mb-4 md:mb-0">
           <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center p-1.5 shrink-0 overflow-hidden drop-shadow-sm">
-             <img src="LOGO AL WAFI TV-01.png" alt="Logo Al Wafi TV" className="w-full h-full object-contain" />
+             <img src="LOGO AL WAFI TV-01.png" alt="Logo Al Wafi TV" className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
           </div>
           <div>
             <h1 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-cyan-400 tracking-tight flex items-center gap-2">
@@ -733,6 +716,7 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
 
       <div className="flex flex-col xl:flex-row gap-4 flex-1 min-h-0">
         
+        {/* LEFT PANEL: UNASSIGNED BLOCKS */}
         <div 
           className="w-full xl:w-64 bg-white rounded-2xl p-4 border border-gray-200 flex flex-col shrink-0 shadow-sm sticky top-[6.5rem] z-30 h-fit" 
           style={{ maxHeight: 'calc(100vh - 8rem)' }}
@@ -778,6 +762,7 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
           </div>
         </div>
 
+        {/* CENTER PANEL: CALENDAR */}
         <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col min-w-0 w-full mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-px bg-gray-100 flex-1">
             {currentWeekDays.map((day, index) => {
@@ -803,6 +788,7 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
               }
 
               const isToday = day.dateKey === new Date().toISOString().split('T')[0];
+              const daySchoolEvents = schoolEventsByDate[day.dateKey] || [];
 
               return (
                 <div
@@ -819,6 +805,15 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
                   </div>
                   
                   <div className={`flex-1 p-2 transition-colors flex flex-col h-full ${dropAreaBgClass}`}>
+                    {daySchoolEvents.map(seEvent => (
+                      <SchoolEventCard 
+                        key={`${seEvent.id}-${day.dateKey}`} 
+                        event={seEvent} 
+                        onDelete={() => handleDeleteSchoolEvent(seEvent.id)}
+                        onView={setSelectedViewEvent}
+                      />
+                    ))}
+
                     {eventsByDate[day.dateKey].map(event => (
                       <EventCard
                         key={event.id}
@@ -837,7 +832,7 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
                       />
                     ))}
                     
-                    {eventsByDate[day.dateKey].length === 0 && (
+                    {eventsByDate[day.dateKey].length === 0 && daySchoolEvents.length === 0 && (
                       <div className="flex-1 flex items-center justify-center text-[11px] font-medium text-gray-300 p-4 text-center pointer-events-none min-h-[150px] border-2 border-dashed border-transparent group-hover/day:border-gray-200 rounded-xl m-2 transition-all">
                         Tarik ke sini
                       </div>
@@ -849,136 +844,336 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
           </div>
         </div>
 
-        <div 
-          className="w-full xl:w-[16rem] bg-slate-50/80 rounded-2xl p-4 border border-slate-200 flex flex-col shrink-0 shadow-inner sticky top-[6.5rem] z-30 h-fit"
-          style={{ maxHeight: 'calc(100vh - 8rem)' }}
-        >
-          <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-50/80 py-2 z-10 border-b border-slate-200 backdrop-blur-sm">
-            <h2 className="font-extrabold text-slate-700 uppercase text-xs tracking-widest flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm animate-pulse"></span> Selesai
-            </h2>
-            <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-200 shadow-sm">
-              {completedTasks.length} Tugas
-            </span>
-          </div>
+        {/* RIGHT PANEL: SCHOOL EVENTS & COMPLETED TASKS */}
+        <div className="w-full xl:w-[17rem] flex flex-col gap-4 shrink-0 z-30">
           
-          <div className="flex-1 overflow-y-auto pr-1 pb-4 flex flex-col gap-2.5 custom-scrollbar">
-            {completedTasks.length === 0 ? (
-              <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-[11px] font-medium bg-white/50">
-                Belum ada tugas selesai.<br/><span className="text-[10px] opacity-75 mt-1 block">Centang tugas di kalender.</span>
-              </div>
-            ) : (
-              completedTasks.map(({ eventId, eventTitle, eventColor, task }) => {
-                const colorTab = EVENT_COLORS.find(c => c.id === eventColor)?.tab || 'bg-gray-400';
-                const member = MEMBER_COLORS[task.assignee] || MEMBER_COLORS['Doni'];
-                return (
-                  <div key={task.id} className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-2 group relative overflow-hidden transition-all hover:shadow-md hover:border-emerald-200">
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${colorTab}`}></div>
-                    
-                    <div className="flex justify-between items-start pl-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate pr-6" title={eventTitle}>
-                        {eventTitle || 'Tanpa Judul'}
-                      </span>
-                      <button
-                        onClick={() => handleToggleTaskCompletion(eventId, task.id)}
-                        className="text-slate-300 hover:text-amber-600 bg-slate-50 hover:bg-amber-50 border border-transparent hover:border-amber-200 rounded p-1 opacity-0 group-hover:opacity-100 transition-all absolute right-2 top-2 shadow-sm"
-                        title="Batal Selesai (Kembalikan)"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+          {/* CONTAINER 1: EVENT SEKOLAH LIST */}
+          <div 
+            className="bg-white rounded-2xl p-4 border border-gray-200 flex flex-col shadow-sm sticky top-[6.5rem] h-fit"
+            style={{ maxHeight: 'calc(50vh - 4.5rem)' }}
+          >
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white py-1 z-10 border-b border-gray-100">
+              <h2 className="font-extrabold text-gray-800 uppercase text-xs tracking-widest flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-400 shadow-sm"></span> Event Sekolah
+              </h2>
+              <button
+                onClick={handleOpenSchoolEventModal}
+                className="p-1.5 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors border border-orange-200 flex items-center justify-center"
+                title="Tambah Event Sekolah Baru"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-1 pb-2 flex flex-col gap-2.5 custom-scrollbar">
+              {allSchoolEventsList.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-[11px] font-medium bg-gray-50">
+                  Belum ada event sekolah.<br/><span className="text-[10px] opacity-75 mt-1 block">Klik tombol + di atas.</span>
+                </div>
+              ) : (
+                allSchoolEventsList.map((se) => {
+                  const eventDateObj = new Date(se.date);
+                  const isPast = eventDateObj < new Date(new Date().setHours(0,0,0,0));
+                  const activeColor = EVENT_COLORS.find(c => c.id === (se.colorId || 'info')) || EVENT_COLORS[4];
+                  const hasEndDate = se.endDate && se.endDate !== se.date;
+
+                  return (
+                    <div 
+                      key={se.id} 
+                      onClick={() => setSelectedViewEvent(se)}
+                      className={`p-2.5 rounded-xl border flex flex-col gap-1.5 group relative transition-all cursor-pointer hover:shadow-md ${activeColor.bg} ${activeColor.border} ${isPast ? 'opacity-60 grayscale-[50%]' : ''}`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-600 bg-white/60 px-1.5 py-0.5 rounded border border-indigo-100 shadow-sm">
+                          {se.divisi}
+                        </span>
+                        {hasEndDate && (
+                          <span className="text-[9px] font-bold text-gray-500 flex items-center gap-0.5">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            Multi-hari
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-[11px] font-bold text-gray-800 leading-snug line-clamp-2">{se.nama}</h4>
+                      <p className="text-[10px] font-semibold text-gray-600 flex items-center gap-1">
+                        <svg className="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        {new Date(se.date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* CONTAINER 2: SELESAI */}
+          <div 
+            className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 flex flex-col shadow-inner sticky h-fit"
+            style={{ top: 'calc(50vh + 3rem)', maxHeight: 'calc(50vh - 4.5rem)' }}
+          >
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-50/80 py-1 z-10 border-b border-slate-200 backdrop-blur-sm">
+              <h2 className="font-extrabold text-slate-700 uppercase text-xs tracking-widest flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm animate-pulse"></span> Selesai
+              </h2>
+              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-200 shadow-sm">
+                {completedTasks.length} Tugas
+              </span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-1 pb-2 flex flex-col gap-2.5 custom-scrollbar">
+              {completedTasks.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-[11px] font-medium bg-white/50">
+                  Belum ada tugas selesai.<br/><span className="text-[10px] opacity-75 mt-1 block">Centang tugas di kalender.</span>
+                </div>
+              ) : (
+                completedTasks.map(({ eventId, eventTitle, eventColor, task }) => {
+                  const colorTab = EVENT_COLORS.find(c => c.id === eventColor)?.tab || 'bg-gray-400';
+                  const member = MEMBER_COLORS[task.assignee] || MEMBER_COLORS['Doni'];
+                  return (
+                    <div key={task.id} className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-2 group relative overflow-hidden transition-all hover:shadow-md hover:border-emerald-200">
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${colorTab}`}></div>
+                      
+                      <div className="flex justify-between items-start pl-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate pr-6" title={eventTitle}>
+                          {eventTitle || 'Tanpa Judul'}
+                        </span>
+                        <button
+                          onClick={() => handleToggleTaskCompletion(eventId, task.id)}
+                          className="text-slate-300 hover:text-amber-600 bg-slate-50 hover:bg-amber-50 border border-transparent hover:border-amber-200 rounded p-1 opacity-0 group-hover:opacity-100 transition-all absolute right-2 top-2 shadow-sm"
+                          title="Batal Selesai (Kembalikan)"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                        </button>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 pl-2">
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${member.bg} ${member.text} border ${member.border}`}>
+                          {task.assignee}
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-500 line-through decoration-slate-300 truncate">
+                          {task.type || 'Tugas kustom'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* MODALS */}
+      {isSchoolEventModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="font-extrabold text-gray-800 text-lg flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-orange-400 shadow-sm"></span> Form Event Sekolah
+              </h3>
+              <button onClick={() => setIsSchoolEventModalOpen(false)} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl p-2 transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            
+            <form id="schoolEventForm" onSubmit={handleSaveSchoolEvent} className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                
+                <div className="md:col-span-2">
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Nama Event <span className="text-red-500">*</span></label>
+                  <input type="text" required value={schoolEventForm.nama} onChange={e => setSchoolEventForm({...schoolEventForm, nama: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all shadow-sm placeholder:font-medium placeholder:text-gray-400" placeholder="Contoh: Kajian Akbar / Rapat Evaluasi" autoFocus />
+                </div>
+                
+                <div>
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Divisi Penyelenggara</label>
+                  {schoolEventForm.isCustomDivisi ? (
+                    <div className="flex items-center gap-2">
+                      <input type="text" value={schoolEventForm.divisi === '...' ? '' : schoolEventForm.divisi} onChange={e => setSchoolEventForm({...schoolEventForm, divisi: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-indigo-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none shadow-sm" placeholder="Ketik divisi..." autoFocus />
+                      <button type="button" onClick={() => setSchoolEventForm({...schoolEventForm, isCustomDivisi: false, divisi: DIVISI_OPTIONS[0]})} className="p-2.5 text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 rounded-xl transition-colors border border-gray-200 hover:border-red-200" title="Batal Ketik Manual">
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                       </button>
                     </div>
-                    
-                    <div className="flex items-center gap-2 pl-2">
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${member.bg} ${member.text} border ${member.border}`}>
-                        {task.assignee}
-                      </span>
-                      <span className="text-[11px] font-semibold text-slate-500 line-through decoration-slate-300 truncate">
-                        {task.type || 'Tugas kustom'}
-                      </span>
+                  ) : (
+                    <select value={schoolEventForm.divisi} onChange={e => {
+                        if(e.target.value === '...') setSchoolEventForm({...schoolEventForm, isCustomDivisi: true, divisi: ''});
+                        else setSchoolEventForm({...schoolEventForm, divisi: e.target.value});
+                      }} 
+                      className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm appearance-none"
+                    >
+                      {DIVISI_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      <option value="...">+ Ketik Manual...</option>
+                    </select>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">PIC (Penanggung Jawab)</label>
+                  <input type="text" value={schoolEventForm.pic} onChange={e => setSchoolEventForm({...schoolEventForm, pic: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all shadow-sm" placeholder="Nama PIC Acara" />
+                </div>
+              </div>
+
+              <div className="bg-slate-50/50 p-4 rounded-2xl border border-gray-100 mb-6 flex flex-col gap-4">
+                <h4 className="text-xs font-extrabold text-gray-800 flex items-center gap-2 mb-1">
+                   <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
+                   Tema Acara (Multibahasa)
+                </h4>
+                <div>
+                  <label className="block text-[10px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Indonesia 🇮🇩</label>
+                  <input type="text" value={schoolEventForm.temaId} onChange={e => setSchoolEventForm({...schoolEventForm, temaId: e.target.value})} className="w-full text-sm font-semibold text-gray-700 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 outline-none shadow-sm" placeholder="Contoh: Pentingnya Menuntut Ilmu" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5 ml-1 text-right">Arab 🇸🇦</label>
+                  <input type="text" dir="rtl" value={schoolEventForm.temaAr} onChange={e => setSchoolEventForm({...schoolEventForm, temaAr: e.target.value})} className="w-full text-base font-medium font-serif text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 outline-none shadow-sm text-right" placeholder="أهمية طلب العلم" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Inggris 🇬🇧</label>
+                  <input type="text" value={schoolEventForm.temaEn} onChange={e => setSchoolEventForm({...schoolEventForm, temaEn: e.target.value})} className="w-full text-sm font-semibold text-gray-700 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 outline-none shadow-sm" placeholder="The Importance of Seeking Knowledge" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Mulai <span className="text-red-500">*</span></label>
+                  <input type="date" required value={schoolEventForm.date} onChange={e => setSchoolEventForm({...schoolEventForm, date: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Selesai (Opsional)</label>
+                  <input type="date" min={schoolEventForm.date} value={schoolEventForm.endDate || ''} onChange={e => setSchoolEventForm({...schoolEventForm, endDate: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Waktu (Jam)</label>
+                  <input type="time" value={schoolEventForm.waktu} onChange={e => setSchoolEventForm({...schoolEventForm, waktu: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm" />
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Lokasi Acara</label>
+                  <input type="text" value={schoolEventForm.lokasi} onChange={e => setSchoolEventForm({...schoolEventForm, lokasi: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all shadow-sm" placeholder="Contoh: Masjid / Aula / Lapangan" />
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Pengisi / Pemateri</label>
+                  <input type="text" value={schoolEventForm.pemateri} onChange={e => setSchoolEventForm({...schoolEventForm, pemateri: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all shadow-sm" placeholder="Nama Ustadz atau Pemateri" />
+                </div>
+
+                <div className="md:col-span-3">
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Warna Kartu Event</label>
+                  <div className="flex gap-2.5 bg-white p-3 rounded-xl border border-gray-200 shadow-sm w-fit">
+                    {EVENT_COLORS.map(color => (
+                      <button
+                        key={color.id}
+                        type="button"
+                        onClick={() => setSchoolEventForm({...schoolEventForm, colorId: color.id})}
+                        className={`w-7 h-7 rounded-full ${color.tab} border-2 border-white shadow-md transition-all hover:scale-110 ${schoolEventForm.colorId === color.id ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110' : 'opacity-70 hover:opacity-100'}`}
+                        title={`Pilih Warna`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </form>
+            
+            <div className="p-5 bg-white border-t border-gray-100 flex justify-end gap-3 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)] z-10">
+              <button type="button" onClick={() => setIsSchoolEventModalOpen(false)} className="px-5 py-2.5 text-xs font-extrabold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">Batal</button>
+              <button type="submit" form="schoolEventForm" disabled={!schoolEventForm.nama || !schoolEventForm.date} className="px-6 py-2.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-[0_4px_12px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_16px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                Simpan ke Kalender
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedViewEvent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            <div className={`px-6 py-4 flex justify-between items-center shadow-md z-10 ${EVENT_COLORS.find(c => c.id === (selectedViewEvent.colorId || 'info'))?.tab || 'bg-blue-500'}`}>
+              <h3 className="font-extrabold text-white text-base flex items-center gap-2.5">
+                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+                Detail Event Sekolah
+              </h3>
+              <button onClick={() => setSelectedViewEvent(null)} className="text-white/70 hover:text-white bg-black/10 hover:bg-black/20 rounded-xl p-2 transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar flex flex-col gap-5 bg-slate-50/50">
+               <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Nama Event</span>
+                  <p className="text-xl font-black text-gray-800 mt-0.5">{selectedViewEvent.nama}</p>
+               </div>
+               
+               <div className="grid grid-cols-2 gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Divisi</span>
+                    <div className="mt-1">
+                      <span className="text-xs font-bold text-gray-700 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-md">{selectedViewEvent.divisi}</span>
                     </div>
                   </div>
-                );
-              })
-            )}
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">PIC</span>
+                    <p className="text-sm font-bold text-gray-700 mt-1">{selectedViewEvent.pic || '-'}</p>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Tanggal Acara</span>
+                    <p className="text-sm font-bold text-gray-700 mt-1 flex items-center gap-1.5">
+                       <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                       {selectedViewEvent.date ? (
+                         selectedViewEvent.endDate && selectedViewEvent.endDate !== selectedViewEvent.date 
+                           ? `${new Date(selectedViewEvent.date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})} s.d ${new Date(selectedViewEvent.endDate).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}`
+                           : new Date(selectedViewEvent.date).toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'})
+                       ) : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Waktu / Jam</span>
+                    <p className="text-sm font-bold text-gray-700 mt-1 flex items-center gap-1.5">
+                       <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                       {selectedViewEvent.waktu || '-'}
+                    </p>
+                  </div>
+               </div>
+
+               <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Lokasi</span>
+                    <p className="text-sm font-bold text-gray-700 mt-1 flex items-start gap-1.5">
+                       <svg className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                       {selectedViewEvent.lokasi || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Pengisi / Pemateri</span>
+                    <p className="text-sm font-bold text-gray-700 mt-1 flex items-start gap-1.5">
+                       <svg className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                       {selectedViewEvent.pemateri || '-'}
+                    </p>
+                  </div>
+               </div>
+
+               {(selectedViewEvent.temaId || selectedViewEvent.temaAr || selectedViewEvent.temaEn) && (
+                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 mb-2 block">Tema Event</span>
+                    <div className="flex flex-col gap-2">
+                       {selectedViewEvent.temaId && <p className="text-sm font-semibold text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-100">🇮🇩 {selectedViewEvent.temaId}</p>}
+                       {selectedViewEvent.temaAr && <p className="text-base font-semibold text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-100 text-right font-serif" dir="rtl">🇸🇦 {selectedViewEvent.temaAr}</p>}
+                       {selectedViewEvent.temaEn && <p className="text-sm font-semibold text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-100">🇬🇧 {selectedViewEvent.temaEn}</p>}
+                    </div>
+                 </div>
+               )}
+            </div>
+            
+            <div className="p-4 bg-white border-t border-gray-100 flex justify-end shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)] z-10">
+              <button onClick={() => setSelectedViewEvent(null)} className="px-6 py-2.5 text-xs font-extrabold text-white bg-slate-800 hover:bg-slate-900 rounded-xl shadow-md hover:shadow-lg transition-all">
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
-
-      </div>
-
-      <button
-        onClick={() => setIsChatOpen(true)}
-        className={`fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center justify-center z-40 group ${isChatOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
-        title="Buka Asisten AI"
-      >
-        <svg className="w-7 h-7 text-white drop-shadow-md group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v.01M12 21v.01M3 12h.01M21 12h.01"></path>
-        </svg>
-        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-cyan-500 border-2 border-white"></span>
-        </span>
-      </button>
-
-      <div className={`fixed bottom-6 right-6 w-80 sm:w-96 bg-white/90 backdrop-blur-xl border border-blue-100 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${isChatOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-0 opacity-0 pointer-events-none'}`} style={{ height: '500px', maxHeight: '80vh' }}>
-        
-        <div className="px-4 py-3 bg-gradient-to-r from-blue-700 to-cyan-500 flex justify-between items-center shadow-md">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center p-1.5 backdrop-blur-sm border border-white/30">
-               <svg className="w-full h-full text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            </div>
-            <div>
-              <h3 className="font-extrabold text-white text-sm">WIIBS AI Assistant</h3>
-              <p className="text-[10px] text-blue-100 font-medium">Asisten Cerdas MMedia</p>
-            </div>
-          </div>
-          <button onClick={() => setIsChatOpen(false)} className="text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-lg transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-        </div>
-
-        <div className="flex-1 p-4 overflow-y-auto bg-slate-50/50 flex flex-col gap-3 custom-scrollbar">
-          {chatMessages.map((msg, idx) => (
-            <div key={idx} className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'self-end items-end' : 'self-start items-start'}`}>
-              <span className="text-[10px] font-bold text-gray-400 mb-1 px-1">{msg.role === 'user' ? 'Anda' : 'WIIBS AI'}</span>
-              <div className={`px-3.5 py-2.5 rounded-2xl text-[13px] leading-relaxed shadow-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border border-gray-200 text-gray-700 rounded-tl-sm'}`}>
-                {msg.parts[0].text}
-              </div>
-            </div>
-          ))}
-          {isChatLoading && (
-            <div className="self-start items-start max-w-[85%] flex flex-col">
-              <span className="text-[10px] font-bold text-gray-400 mb-1 px-1">WIIBS AI</span>
-              <div className="px-4 py-3 bg-white border border-gray-200 rounded-2xl rounded-tl-sm shadow-sm flex gap-1.5 items-center h-10">
-                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
-
-        <div className="p-3 bg-white border-t border-gray-100">
-          <div className="relative flex items-center">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendChatMessage()}
-              placeholder="Tanya WIIBS AI..."
-              className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all shadow-inner"
-            />
-            <button
-              onClick={handleSendChatMessage}
-              disabled={!chatInput.trim() || isChatLoading}
-              className={`absolute right-1.5 p-1.5 rounded-lg flex items-center justify-center transition-all ${chatInput.trim() && !isChatLoading ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700 hover:scale-105' : 'bg-gray-200 text-gray-400'}`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
 
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }

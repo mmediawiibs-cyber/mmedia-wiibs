@@ -154,7 +154,6 @@ const EventCard = ({
         </div>
       </div>
 
-      {}
       <div className="flex flex-col ml-1 mb-3 shadow-sm rounded-lg bg-white border border-gray-200 overflow-hidden">
         {visibleTasks.length === 0 && (
           <div className="text-[11px] text-center p-3 text-gray-400 font-medium bg-gray-50/50">Belum ada tugas</div>
@@ -260,7 +259,6 @@ export default function MediaPlanner() {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [draggedEventId, setDraggedEventId] = useState(null);
   
-  // State Database & Cloud Sync
   const [user, setUser] = useState(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [syncStatus, setSyncStatus] = useState('Menghubungkan...');
@@ -277,7 +275,6 @@ export default function MediaPlanner() {
 
   const events = history[historyIndex] || {}; 
 
-  // Autentikasi Pengguna & Sesi (Otomatis menggunakan akun yang sedang aktif)
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -295,7 +292,6 @@ export default function MediaPlanner() {
     return () => unsubscribe();
   }, []);
 
-  // Memuat Data (Load) dari Cloud Database saat pertama kali buka
   useEffect(() => {
     if (!user) return;
     
@@ -317,7 +313,6 @@ export default function MediaPlanner() {
           });
         }
       } else {
-        // Jika belum ada data sama sekali (pengguna baru), buatkan template standar
         const initialEventId = generateId();
         const currentWeekDays = getWeekDays(0);
         const mondayDateKey = currentWeekDays[1].dateKey;
@@ -350,7 +345,6 @@ export default function MediaPlanner() {
     return () => unsubscribe();
   }, [user]);
 
-  // Fungsi untuk menyimpan perubahan ke Cloud secara Real-time
   const syncToCloud = (eventsToSync) => {
     if (user) {
       setSyncStatus('Menyimpan...');
@@ -369,7 +363,6 @@ export default function MediaPlanner() {
       const newHistory = prevHistory.slice(0, historyIndex + 1);
       newHistory.push(newEvents);
       
-      // Simpan langsung ke database Cloud
       syncToCloud(newEvents);
       
       return newHistory;
@@ -409,10 +402,11 @@ export default function MediaPlanner() {
     setIsChatLoading(true);
 
     try {
-      const apiKey = ""; 
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+      // 🔑 MASUKKAN API KEY ANDA DI SINI
+      const apiKey = "AIzaSyAF7lw8y7cM3AXypyV4LW0di1vtg6xAY5g"; 
+      
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-      // Pengecekan apakah user mengetik perintah /konten di awal
       const isContentMode = chatInput.trim().toLowerCase().startsWith('/konten');
 
       let systemPrompt = "";
@@ -471,13 +465,16 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
       });
 
       const result = await response.json();
-      if (result.candidates && result.candidates[0].content) {
+      
+      if (result.error) {
+         setChatMessages(prev => [...prev, { role: 'model', parts: [{ text: `Error: ${result.error.message || 'API Key mungkin tidak valid atau kosong.'}` }] }]);
+      } else if (result.candidates && result.candidates[0].content) {
           setChatMessages(prev => [...prev, result.candidates[0].content]);
       } else {
-          setChatMessages(prev => [...prev, { role: 'model', parts: [{ text: 'Maaf, sistem AI sedang mengalami gangguan saat merespon.' }] }]);
+          setChatMessages(prev => [...prev, { role: 'model', parts: [{ text: 'Maaf, respons dari AI kosong atau tidak sesuai.' }] }]);
       }
     } catch (error) {
-      setChatMessages(prev => [...prev, { role: 'model', parts: [{ text: 'Terjadi kesalahan jaringan. Coba lagi nanti.' }] }]);
+      setChatMessages(prev => [...prev, { role: 'model', parts: [{ text: 'Terjadi kesalahan jaringan atau koneksi API. Pastikan API Key sudah dimasukkan dengan benar.' }] }]);
     } finally {
       setIsChatLoading(false);
     }
@@ -671,10 +668,7 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-3 md:p-5 flex flex-col relative overflow-x-hidden">
       
-      {/* Header Utama Aplikasi */}
       <header className="sticky top-2 z-40 bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-3 md:px-5 flex flex-col md:flex-row justify-between items-center mb-6 ring-1 ring-black/5">
-        
-        {/* Left Side: Logo & Titles */}
         <div className="flex items-center gap-4 mb-4 md:mb-0">
           <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center p-1.5 shrink-0 overflow-hidden drop-shadow-sm">
              <img src="LOGO AL WAFI TV-01.png" alt="Logo Al Wafi TV" className="w-full h-full object-contain" />
@@ -686,7 +680,6 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Task Planner</p>
               <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-              {/* Indikator Status Database */}
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors ${syncStatus === 'Tersimpan' || syncStatus === 'Cloud Aktif' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
                 {syncStatus === 'Tersimpan' || syncStatus === 'Cloud Aktif' ? (
                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
@@ -701,7 +694,6 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
           </div>
         </div>
 
-        {/* Right Side: Toolbar */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 bg-white border border-gray-200 p-1 rounded-xl shadow-sm">
             <button onClick={() => setWeekOffset(prev => prev - 1)} className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" title="Pekan Lalu">
@@ -739,10 +731,8 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
         </div>
       </header>
 
-      {/* Bagian Bawah: Kalender dan Sidebar */}
       <div className="flex flex-col xl:flex-row gap-4 flex-1 min-h-0">
         
-        {/* Left Sidebar: Unassigned Blocks */}
         <div 
           className="w-full xl:w-64 bg-white rounded-2xl p-4 border border-gray-200 flex flex-col shrink-0 shadow-sm sticky top-[6.5rem] z-30 h-fit" 
           style={{ maxHeight: 'calc(100vh - 8rem)' }}
@@ -788,7 +778,6 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
           </div>
         </div>
 
-        {/* Kalender Utama */}
         <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col min-w-0 w-full mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-px bg-gray-100 flex-1">
             {currentWeekDays.map((day, index) => {
@@ -809,8 +798,8 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
                 headerColorClass = "bg-blue-50 border-blue-100 text-blue-800";
                 dropAreaBgClass = "bg-blue-50/10 hover:bg-blue-50/40";
               } else if (index === 6) {
-                headerColorClass = "bg-gray-100 border-gray-200 text-gray-600";
-                dropAreaBgClass = "bg-gray-50/30 hover:bg-gray-50/60";
+                headerColorClass = "bg-gray-200 border-gray-300 text-gray-600";
+                dropAreaBgClass = "bg-gray-100/30 hover:bg-gray-100/60";
               }
 
               const isToday = day.dateKey === new Date().toISOString().split('T')[0];
@@ -860,7 +849,6 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
           </div>
         </div>
 
-        {/* Right Sidebar: Arsip Selesai */}
         <div 
           className="w-full xl:w-[16rem] bg-slate-50/80 rounded-2xl p-4 border border-slate-200 flex flex-col shrink-0 shadow-inner sticky top-[6.5rem] z-30 h-fit"
           style={{ maxHeight: 'calc(100vh - 8rem)' }}
@@ -917,7 +905,6 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
 
       </div>
 
-      {/* Tombol Melayang AI */}
       <button
         onClick={() => setIsChatOpen(true)}
         className={`fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center justify-center z-40 group ${isChatOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
@@ -933,10 +920,8 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
         </span>
       </button>
 
-      {/* Panel Chat Melayang */}
       <div className={`fixed bottom-6 right-6 w-80 sm:w-96 bg-white/90 backdrop-blur-xl border border-blue-100 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${isChatOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-0 opacity-0 pointer-events-none'}`} style={{ height: '500px', maxHeight: '80vh' }}>
         
-        {/* Header Chat */}
         <div className="px-4 py-3 bg-gradient-to-r from-blue-700 to-cyan-500 flex justify-between items-center shadow-md">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center p-1.5 backdrop-blur-sm border border-white/30">
@@ -952,7 +937,6 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
           </button>
         </div>
 
-        {/* Area Pesan */}
         <div className="flex-1 p-4 overflow-y-auto bg-slate-50/50 flex flex-col gap-3 custom-scrollbar">
           {chatMessages.map((msg, idx) => (
             <div key={idx} className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'self-end items-end' : 'self-start items-start'}`}>
@@ -975,7 +959,6 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
           <div ref={chatEndRef} />
         </div>
 
-        {/* Input Chat */}
         <div className="p-3 bg-white border-t border-gray-100">
           <div className="relative flex items-center">
             <input
@@ -997,7 +980,6 @@ Tugas Anda adalah merancang **Skenario Drama Pendek/Skit** yang menyentuh hati a
         </div>
       </div>
 
-      {/* Inject custom scrollbar style */}
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

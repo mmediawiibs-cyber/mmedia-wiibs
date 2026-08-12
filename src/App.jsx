@@ -23,9 +23,9 @@ const EVENT_COLORS = [
   { id: 'info', bg: 'bg-blue-50', border: 'border-blue-200', tab: 'bg-blue-500' },
   { id: 'purple', bg: 'bg-purple-50', border: 'border-purple-200', tab: 'bg-purple-500' },
   { id: 'pink', bg: 'bg-pink-50', border: 'border-pink-200', tab: 'bg-pink-500' },
-  { id: 'teal', bg: 'bg-teal-50', border: 'border-teal-200', tab: 'bg-teal-500' },     // Tosca
-  { id: 'yellow', bg: 'bg-yellow-50', border: 'border-yellow-200', tab: 'bg-yellow-500' }, // Kuning
-  { id: 'sky', bg: 'bg-sky-50', border: 'border-sky-200', tab: 'bg-sky-500' }           // Biru Muda
+  { id: 'teal', bg: 'bg-teal-50', border: 'border-teal-200', tab: 'bg-teal-500' },
+  { id: 'yellow', bg: 'bg-yellow-50', border: 'border-yellow-200', tab: 'bg-yellow-500' },
+  { id: 'sky', bg: 'bg-sky-50', border: 'border-sky-200', tab: 'bg-sky-500' }
 ];
 
 const UNIT_OPTIONS = ['Asset Management', 'Content Creator', 'Design Graphic'];
@@ -83,12 +83,10 @@ const SchoolEventCard = ({ event, onDelete, onView, onEdit }) => {
   const hasEndDate = event.endDate && event.endDate !== event.date;
   
   return (
-    // PERUBAHAN UI: border-r-4 (garis kanan tebal), kursor pointer, dan borderRightColor
     <div className={`${activeColor.bg} border border-gray-200 border-r-4 rounded-xl shadow-sm p-3 mb-3 relative group overflow-hidden transition-all hover:shadow-md cursor-pointer hover:border-gray-300`} 
          style={{ borderRightColor: activeColor.tab.replace('bg-', '') }}
          onClick={() => onView(event)}>
       
-      {/* Tombol Aksi (Edit & Hapus) */}
       <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={e => e.stopPropagation()}>
         <button onClick={(e) => { e.stopPropagation(); onEdit(event); }} className="text-gray-400 hover:text-amber-500 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-amber-200" title="Edit Event">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
@@ -98,7 +96,6 @@ const SchoolEventCard = ({ event, onDelete, onView, onEdit }) => {
         </button>
       </div>
       
-      {/* Label Divisi & Multi-hari diletakkan rata kanan (menyesuaikan gaya garis kanan) */}
       <div className="mb-2 pl-14 flex items-center justify-end gap-1.5 flex-wrap">
         {hasEndDate && (
           <span className="text-[9px] font-bold text-gray-500 flex items-center gap-0.5 bg-white/80 px-1.5 py-0.5 rounded border border-gray-200">
@@ -111,7 +108,6 @@ const SchoolEventCard = ({ event, onDelete, onView, onEdit }) => {
       
       <h4 className="text-sm font-bold text-gray-800 leading-tight mb-2 pr-2 line-clamp-2">{event.nama}</h4>
       
-      {/* Detail Waktu & Lokasi */}
       <div className="flex flex-col gap-1.5 text-[11px] text-gray-600 bg-white/60 p-2 rounded-lg border border-white/50 shadow-inner">
         <div className="flex items-start gap-1.5">
            <svg className={`w-3.5 h-3.5 ${activeColor.tab.replace('bg-', 'text-')} shrink-0 mt-0.5`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -137,7 +133,7 @@ const EventCard = ({
   onUpdateEventUnit,
   onUpdateEventColor,
   onDeleteEvent,
-  onDuplicateEvent, // <--- Prop baru untuk duplikat
+  onDuplicateEvent,
   onAddTask,
   onUpdateTask,
   onDeleteTask,
@@ -147,7 +143,6 @@ const EventCard = ({
   const visibleTasks = (event.tasks || []).filter(t => !t.isCompleted);
 
   return (
-    // PERUBAHAN UI: border-l-4 (Garis Kiri Tebal) untuk Tugas Media
     <div
       draggable
       onDragStart={(e) => onDragStart(e, event.id)}
@@ -155,7 +150,6 @@ const EventCard = ({
       className={`${activeColor.bg} ${activeColor.border} border-l-4 rounded-xl shadow-sm hover:shadow-md transition-all p-3 mb-3 cursor-grab active:cursor-grabbing border relative overflow-hidden group`}
       style={{ borderLeftColor: activeColor.id === 'default' ? '#cbd5e1' : activeColor.tab.replace('bg-', '') }}
     >
-      {/* Garis Aksen Kiri (Tambahan) */}
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeColor.tab}`}></div>
 
       <div className="flex flex-col gap-2 mb-3 ml-1">
@@ -199,7 +193,6 @@ const EventCard = ({
             )}
           </div>
           
-          {/* PERUBAHAN UI: Ditambahkan Tombol Duplikat Kartu Tugas */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button onClick={() => onDuplicateEvent(event.id)} className="text-gray-400 hover:text-blue-500 bg-white/50 hover:bg-blue-50 rounded-lg p-1 shadow-sm border border-transparent hover:border-blue-100" title="Duplikat Tugas ini">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -210,7 +203,6 @@ const EventCard = ({
           </div>
         </div>
         
-        {/* Pilihan Warna (Palette) */}
         <div className="flex flex-wrap gap-1.5 mt-1">
           {EVENT_COLORS.map(color => (
             <button
@@ -271,7 +263,6 @@ const EventCard = ({
                     </div>
                   ) : (
                     <div className="relative w-full">
-                      {/* PERUBAHAN UI: Warna font select hitam/gelap (text-slate-800) */}
                       <select
                         value={TASK_TYPES.includes(task.type) ? task.type : (task.type === '' ? '...' : task.type)}
                         onChange={(e) => {
@@ -294,7 +285,6 @@ const EventCard = ({
                 </div>
                 
                 <div className="flex items-center gap-1 shrink-0">
-                  {/* Tombol X (Hapus Tugas) di samping tombol Check */}
                   <button 
                     onClick={() => onDeleteTask(event.id, task.id)}
                     className="w-5 h-5 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-md text-gray-300 hover:text-red-500 opacity-0 group-hover/task:opacity-100 shadow-sm border border-transparent hover:border-red-200 hover:bg-red-50 transition-all hover:scale-110"
@@ -501,14 +491,12 @@ export default function App() {
     });
   };
 
-  // FUNGSI DUPLIKAT: Meng-copy satu blok Tugas Media beserta isinya, dan menaruhnya di 'Cadangan' (Kiri)
   const handleDuplicateEvent = (eventId) => {
     updateEvents(prev => {
       const original = prev[eventId];
       if (!original) return prev;
       
       const newId = generateId();
-      // Copy tasks, give them new IDs, set all to uncompleted
       const duplicatedTasks = (original.tasks || []).map(t => ({
         ...t,
         id: generateId(),
@@ -520,7 +508,7 @@ export default function App() {
         [newId]: {
           ...original,
           id: newId,
-          date: null, // Masuk ke panel kiri (Blok Cadangan)
+          date: null, 
           title: `${original.title} (Copy)`,
           tasks: duplicatedTasks
         }
@@ -667,7 +655,6 @@ export default function App() {
     return acc;
   }, {});
 
-  // Mengumpulkan Tugas yang SELESAI
   const completedTasks = [];
   Object.values(events).forEach(event => {
     if (event.tasks) {
@@ -684,7 +671,6 @@ export default function App() {
     }
   });
 
-  // Mengumpulkan Tugas yang BELUM SELESAI (Hanya yang sudah di kalender)
   const unfinishedTasks = [];
   Object.values(events).forEach(event => {
     if (event.date && event.tasks) { 
@@ -708,18 +694,19 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-3 md:p-5 flex flex-col relative overflow-x-hidden">
       
-      <header className="sticky top-2 z-40 bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-3 md:px-5 flex flex-col md:flex-row justify-between items-center mb-6 ring-1 ring-black/5">
+      {/* Header Utama dengan Gradien Warna */}
+      <header className="sticky top-2 z-40 bg-gradient-to-r from-[#CCF4FF] via-[#5699F2] to-[#104BE6] shadow-lg rounded-2xl p-3 md:px-5 flex flex-col md:flex-row justify-between items-center mb-6 border-none">
         <div className="flex items-center gap-4 mb-4 md:mb-0">
           <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center p-1.5 shrink-0 overflow-hidden drop-shadow-sm">
-             <img src="LOGO AL WAFI TV-01.png" alt="Logo Al Wafi TV" className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
+             <img src="LOGO AL WAFI TV-01.png" alt="Logo" className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-cyan-400 tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-extrabold text-blue-900 tracking-tight flex items-center gap-2">
               MMedia WIIBS
             </h1>
             <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Task Planner</p>
-              <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+              <p className="text-xs font-bold text-blue-900/80 uppercase tracking-widest">Task Planner</p>
+              <div className="w-1 h-1 bg-white/50 rounded-full"></div>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors ${syncStatus === 'Tersimpan' || syncStatus === 'Cloud Aktif' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
                 {syncStatus === 'Tersimpan' || syncStatus === 'Cloud Aktif' ? (
                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
@@ -765,7 +752,6 @@ export default function App() {
         </div>
       </header>
 
-      {}
       <div className="flex flex-col xl:flex-row gap-4 flex-1 min-h-0">
         
         {/* PANEL KIRI: BLOK CADANGAN & TUGAS BELUM SELESAI */}
@@ -860,7 +846,6 @@ export default function App() {
           </div>
         </div>
 
-        {}
         {/* PANEL TENGAH: CALENDAR */}
         <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col min-w-0 w-full mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-px bg-gray-100 flex-1">
@@ -879,10 +864,9 @@ export default function App() {
 
               return (
                 <div key={day.dateKey} className="bg-white min-h-[600px] flex flex-col h-full transition-all group/day" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, day.dateKey)}>
-                  <div className={`p-3 border-b flex justify-center items-center shadow-sm relative ${headerColorClass}`}>
+                  <div className={`p-3 flex justify-center items-center shadow-sm relative ${headerColorClass} border-b`}>
                     {isToday && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>}
-                    {/* Menggunakan font baru "font-tanggal" */}
-                    <h3 className={`text-[13px] tracking-wide font-tanggal ${isToday ? 'font-extrabold text-base' : 'font-bold'}`}>{day.display}</h3>
+                    <h3 className={`text-[13px] tracking-wide font-tanggal ${isToday ? 'font-extrabold' : 'font-bold'}`}>{day.display}</h3>
                   </div>
                   
                   <div className={`flex-1 p-2 transition-colors flex flex-col h-full ${dropAreaBgClass}`}>
@@ -917,7 +901,6 @@ export default function App() {
           </div>
         </div>
 
-        {}
         {/* PANEL KANAN: SCHOOL EVENTS & COMPLETED TASKS */}
         <div className="w-full xl:w-[17rem] flex flex-col gap-4 shrink-0 z-30">
           
@@ -944,7 +927,6 @@ export default function App() {
                   const hasEndDate = se.endDate && se.endDate !== se.date;
 
                   return (
-                    // PERUBAHAN UI: border-r-4 (garis kanan tebal), borderRightColor
                     <div 
                       key={se.id} onClick={() => setSelectedViewEvent(se)} 
                       className={`p-2.5 rounded-xl border border-gray-200 flex flex-col gap-1.5 group relative transition-all cursor-pointer hover:shadow-md border-r-4 ${activeColor.bg} ${isPast ? 'opacity-60 grayscale-[50%]' : ''}`}
@@ -1026,7 +1008,6 @@ export default function App() {
         </div>
       </div>
 
-      {}
       {/* MODALS */}
       {isSchoolEventModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1243,7 +1224,6 @@ export default function App() {
         </div>
       )}
 
-      {}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&display=swap');
         

@@ -386,12 +386,13 @@ export default function App() {
       const docRef = doc(db, 'artifacts', appId, 'team_workspace', 'school_events');
       setDoc(docRef, { events: newSchoolEvents }).catch(console.error);
     }
-  };
+  }, [user]);
 
   const syncToCloud = (eventsToSync) => {
     if (user) {
       setSyncStatus('Menyimpan...');
-      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'planner', 'events');
+      // Menggunakan brankas tim global untuk tugas/planner
+      const docRef = doc(db, 'artifacts', appId, 'team_workspace', 'planner_events');
       setDoc(docRef, { events: eventsToSync })
         .then(() => setSyncStatus('Tersimpan'))
         .catch(() => setSyncStatus('Gagal Simpan'));
@@ -400,7 +401,8 @@ export default function App() {
 
   const syncSchoolEventsToCloud = (newSchoolEvents) => {
     if (user) {
-      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'planner', 'school_events');
+      // Menggunakan brankas tim global untuk event sekolah
+      const docRef = doc(db, 'artifacts', appId, 'team_workspace', 'school_events');
       setDoc(docRef, { events: newSchoolEvents }).catch(console.error);
     }
   };

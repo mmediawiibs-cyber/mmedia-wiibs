@@ -355,66 +355,51 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // ... existing code ...
+
   useEffect(() => {
     if (!user) return;
     
     setSyncStatus('Menyinkronkan...');
-    const plannerRef = doc(db, 'artifacts', appId, 'users', user.uid, 'planner', 'events');
-    const schoolEventsRef = doc(db, 'artifacts', appId, 'users', user.uid, 'planner', 'school_events');
+    
+    // UBAH BARIS INI: Hapus bagian 'users', user.uid
+    // Menjadi brankas global bernama 'team_workspace'
+    const plannerRef = doc(db, 'artifacts', appId, 'team_workspace', 'planner');
+    const schoolEventsRef = doc(db, 'artifacts', appId, 'team_workspace', 'school_events');
     
     const unsubPlanner = onSnapshot(plannerRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data().events;
-        if (data) {
-          setHistory(prev => {
-            const currentStr = JSON.stringify(prev[historyIndex] || {});
-            const newStr = JSON.stringify(data);
-            if (currentStr !== newStr) {
-               setHistoryIndex(0);
-               return [data];
-            }
-            return prev;
-          });
-        }
-      } else {
-        const initialEventId = generateId();
-        const currentWeekDays = getWeekDays(0);
-        const mondayDateKey = currentWeekDays[1].dateKey;
-        const defaultEvent = {
-          [initialEventId]: {
-            id: initialEventId,
-            parentType: 'Event',
-            title: 'Konten IG Reels & Story',
-            unit: UNIT_OPTIONS[0],
-            date: mondayDateKey, 
-            colorId: 'medium',
-            tasks: [
-              { id: generateId(), assignee: 'Rica', type: 'Reporting', isCustom: false, isCompleted: false },
-              { id: generateId(), assignee: 'Ersady', type: 'Reels', isCustom: false, isCompleted: false } 
-            ]
-          }
-        };
-        setHistory([defaultEvent]);
-        setHistoryIndex(0);
-        setDoc(plannerRef, { events: defaultEvent }).catch(console.error);
-      }
-      setIsDataLoaded(true);
-      setSyncStatus('Cloud Aktif');
-    }, (error) => {
-      console.error("Database sync error:", error);
-      setSyncStatus('Offline Mode');
-      setIsDataLoaded(true);
-    });
 
-    const unsubSchoolEvents = onSnapshot(schoolEventsRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data().events;
-        if (data) setSchoolEvents(data);
-      }
-    }, console.error);
+// ... existing code ...
 
-    return () => { unsubPlanner(); unsubSchoolEvents(); };
-  }, [user]);
+  const syncToCloud = (eventsToSync) => {
+    if (user) {
+      setSyncStatus('Menyimpan...');
+      // UBAH BARIS INI JUGA: Samakan dengan yang di atas
+      const docRef = doc(db, 'artifacts', appId, 'team_workspace', 'planner');
+      setDoc(docRef, { events: eventsToSync })
+        .then(() => setSyncStatus('Tersimpan'))
+        .catch(() => setSyncStatus('Gagal Simpan'));
+    }
+  };
+
+  const syncSchoolEventsToCloud = (newSchoolEvents) => {
+    if (user) {
+      // UBAH BARIS INI JUGA: Samakan dengan yang di atas
+      const docRef = doc(db, 'artifacts', appId, 'team_workspace', 'school_events');
+      setDoc(docRef, { events: newSchoolEvents }).catch(console.error);
+    }
+  };
+
+// ... existing code ...
+```eof
+
+**Apa yang terjadi setelah ini diubah?**
+Begitu Anda menyimpan kode ini dan melakukan *Push* ke Vercel:
+1. Mulai sekarang, aplikasi tidak akan lagi peduli siapa yang *login* atau pakai perangkat apa.
+2. PC Anda, Laptop Anda, maupun HP teman-teman tim Anda akan menembak ke folder database yang sama yaitu folder: `team_workspace`.
+3. Jika Anda mengetik tugas di PC, tugas itu akan langsung *muncul (real-time)* di layar Laptop Anda detik itu juga!
+
+Silakan diubah alamat databasenya dan buktikan sendiri sinkronisasinya! 🔥
 
   const syncToCloud = (eventsToSync) => {
     if (user) {

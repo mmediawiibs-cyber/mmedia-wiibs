@@ -1,1 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&display=swap');
+@import "tailwindcss";
+
+/* Tambahkan class custom ini di bawahnya */
+.font-tanggal {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
+}
 @import "tailwindcss";

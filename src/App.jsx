@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -22,7 +22,10 @@ const EVENT_COLORS = [
   { id: 'low', bg: 'bg-green-50', border: 'border-green-200', tab: 'bg-green-500' },
   { id: 'info', bg: 'bg-blue-50', border: 'border-blue-200', tab: 'bg-blue-500' },
   { id: 'purple', bg: 'bg-purple-50', border: 'border-purple-200', tab: 'bg-purple-500' },
-  { id: 'pink', bg: 'bg-pink-50', border: 'border-pink-200', tab: 'bg-pink-500' }
+  { id: 'pink', bg: 'bg-pink-50', border: 'border-pink-200', tab: 'bg-pink-500' },
+  { id: 'teal', bg: 'bg-teal-50', border: 'border-teal-200', tab: 'bg-teal-500' },     // Tosca
+  { id: 'yellow', bg: 'bg-yellow-50', border: 'border-yellow-200', tab: 'bg-yellow-500' }, // Kuning
+  { id: 'sky', bg: 'bg-sky-50', border: 'border-sky-200', tab: 'bg-sky-500' }           // Biru Muda
 ];
 
 const UNIT_OPTIONS = ['Asset Management', 'Content Creator', 'Design Graphic'];
@@ -63,7 +66,7 @@ const getWeekDays = (weekOffset) => {
 
   const days = [];
   const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
   for (let i = 0; i < 7; i++) {
     const currentDay = new Date(monday);
@@ -80,34 +83,35 @@ const SchoolEventCard = ({ event, onDelete, onView, onEdit }) => {
   const hasEndDate = event.endDate && event.endDate !== event.date;
   
   return (
-    <div className={`${activeColor.bg} border ${activeColor.border} border-l-4 rounded-xl shadow-sm p-3 mb-3 relative group overflow-hidden transition-all hover:shadow-md cursor-pointer`} 
-         style={{ borderLeftColor: activeColor.tab.replace('bg-', '') }}
+    // PERUBAHAN UI: border-r-4 (garis kanan tebal), kursor pointer, dan borderRightColor
+    <div className={`${activeColor.bg} border border-gray-200 border-r-4 rounded-xl shadow-sm p-3 mb-3 relative group overflow-hidden transition-all hover:shadow-md cursor-pointer hover:border-gray-300`} 
+         style={{ borderRightColor: activeColor.tab.replace('bg-', '') }}
          onClick={() => onView(event)}>
       
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={e => e.stopPropagation()}>
-        <button onClick={() => onView(event)} className="text-gray-400 hover:text-indigo-600 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-indigo-200" title="Lihat Detail">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-        </button>
-        <button onClick={() => onEdit(event)} className="text-gray-400 hover:text-amber-500 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-amber-200" title="Edit Event">
+      {/* Tombol Aksi (Edit & Hapus) */}
+      <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={e => e.stopPropagation()}>
+        <button onClick={(e) => { e.stopPropagation(); onEdit(event); }} className="text-gray-400 hover:text-amber-500 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-amber-200" title="Edit Event">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
         </button>
-        <button onClick={onDelete} className="text-gray-400 hover:text-red-500 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-red-100" title="Hapus Event">
+        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-gray-400 hover:text-red-500 bg-white/80 rounded-md p-1 shadow-sm border border-gray-100 hover:border-red-100" title="Hapus Event">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
       
-      <div className="mb-2 pr-20 flex items-center gap-1.5">
-        <span className={`text-[9px] font-extrabold uppercase tracking-widest text-white ${activeColor.tab} px-2 py-0.5 rounded-md shadow-sm`}>{event.divisi}</span>
+      {/* Label Divisi & Multi-hari diletakkan rata kanan (menyesuaikan gaya garis kanan) */}
+      <div className="mb-2 pl-14 flex items-center justify-end gap-1.5 flex-wrap">
         {hasEndDate && (
           <span className="text-[9px] font-bold text-gray-500 flex items-center gap-0.5 bg-white/80 px-1.5 py-0.5 rounded border border-gray-200">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             Multi-hari
           </span>
         )}
+        <span className={`text-[9px] font-extrabold uppercase tracking-widest text-white ${activeColor.tab} px-2 py-0.5 rounded-md shadow-sm`}>{event.divisi}</span>
       </div>
       
       <h4 className="text-sm font-bold text-gray-800 leading-tight mb-2 pr-2 line-clamp-2">{event.nama}</h4>
       
+      {/* Detail Waktu & Lokasi */}
       <div className="flex flex-col gap-1.5 text-[11px] text-gray-600 bg-white/60 p-2 rounded-lg border border-white/50 shadow-inner">
         <div className="flex items-start gap-1.5">
            <svg className={`w-3.5 h-3.5 ${activeColor.tab.replace('bg-', 'text-')} shrink-0 mt-0.5`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -133,6 +137,7 @@ const EventCard = ({
   onUpdateEventUnit,
   onUpdateEventColor,
   onDeleteEvent,
+  onDuplicateEvent, // <--- Prop baru untuk duplikat
   onAddTask,
   onUpdateTask,
   onDeleteTask,
@@ -142,13 +147,15 @@ const EventCard = ({
   const visibleTasks = (event.tasks || []).filter(t => !t.isCompleted);
 
   return (
+    // PERUBAHAN UI: border-l-4 (Garis Kiri Tebal) untuk Tugas Media
     <div
       draggable
       onDragStart={(e) => onDragStart(e, event.id)}
       onDragEnd={onDragEnd}
       className={`${activeColor.bg} ${activeColor.border} border-l-4 rounded-xl shadow-sm hover:shadow-md transition-all p-3 mb-3 cursor-grab active:cursor-grabbing border relative overflow-hidden group`}
-      style={{ borderLeftColor: activeColor.id === 'default' ? '#cbd5e1' : undefined }}
+      style={{ borderLeftColor: activeColor.id === 'default' ? '#cbd5e1' : activeColor.tab.replace('bg-', '') }}
     >
+      {/* Garis Aksen Kiri (Tambahan) */}
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeColor.tab}`}></div>
 
       <div className="flex flex-col gap-2 mb-3 ml-1">
@@ -187,16 +194,24 @@ const EventCard = ({
                 value={event.title || ''}
                 onChange={(e) => onUpdateEventTitle(event.id, e.target.value)}
                 className="font-bold text-gray-800 bg-transparent border-b border-gray-200 hover:border-gray-400 focus:border-indigo-500 focus:outline-none w-full p-0 pb-1 text-sm transition-colors placeholder:text-gray-300"
-                placeholder="Tulis Judul..."
+                placeholder="Tulis Judul Tugas..."
               />
             )}
           </div>
-          <button onClick={() => onDeleteEvent(event.id)} className="text-gray-300 hover:text-red-500 bg-white/50 hover:bg-red-50 rounded-lg p-1 transition-colors opacity-0 group-hover:opacity-100 shadow-sm border border-transparent hover:border-red-100" title="Hapus Blok">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
+          
+          {/* PERUBAHAN UI: Ditambahkan Tombol Duplikat Kartu Tugas */}
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={() => onDuplicateEvent(event.id)} className="text-gray-400 hover:text-blue-500 bg-white/50 hover:bg-blue-50 rounded-lg p-1 shadow-sm border border-transparent hover:border-blue-100" title="Duplikat Tugas ini">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </button>
+            <button onClick={() => onDeleteEvent(event.id)} className="text-gray-400 hover:text-red-500 bg-white/50 hover:bg-red-50 rounded-lg p-1 shadow-sm border border-transparent hover:border-red-100" title="Hapus Blok">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
         </div>
         
-        <div className="flex gap-1.5 mt-1">
+        {/* Pilihan Warna (Palette) */}
+        <div className="flex flex-wrap gap-1.5 mt-1">
           {EVENT_COLORS.map(color => (
             <button
               key={color.id}
@@ -256,6 +271,7 @@ const EventCard = ({
                     </div>
                   ) : (
                     <div className="relative w-full">
+                      {/* PERUBAHAN UI: Warna font select hitam/gelap (text-slate-800) */}
                       <select
                         value={TASK_TYPES.includes(task.type) ? task.type : (task.type === '' ? '...' : task.type)}
                         onChange={(e) => {
@@ -265,7 +281,7 @@ const EventCard = ({
                             onUpdateTask(event.id, task.id, { type: e.target.value });
                           }
                         }}
-                        className="w-full text-[11px] py-1 px-1.5 bg-transparent border-none focus:ring-0 font-semibold text-gray-700 outline-none cursor-pointer truncate appearance-none pr-5 hover:text-indigo-600 transition-colors"
+                        className="w-full text-[11px] py-1 px-1.5 bg-transparent border-none focus:ring-0 font-bold text-slate-800 outline-none cursor-pointer truncate appearance-none pr-5 hover:text-indigo-600 transition-colors"
                       >
                         {TASK_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
                         <option value="...">...</option>
@@ -278,10 +294,11 @@ const EventCard = ({
                 </div>
                 
                 <div className="flex items-center gap-1 shrink-0">
+                  {/* Tombol X (Hapus Tugas) di samping tombol Check */}
                   <button 
                     onClick={() => onDeleteTask(event.id, task.id)}
                     className="w-5 h-5 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-md text-gray-300 hover:text-red-500 opacity-0 group-hover/task:opacity-100 shadow-sm border border-transparent hover:border-red-200 hover:bg-red-50 transition-all hover:scale-110"
-                    title="Hapus Tugas"
+                    title="Hapus Baris Tugas"
                   >
                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>
@@ -326,9 +343,7 @@ export default function App() {
   const [isSchoolEventModalOpen, setIsSchoolEventModalOpen] = useState(false);
   const [schoolEventForm, setSchoolEventForm] = useState({
     id: '', nama: '', divisi: DIVISI_OPTIONS[0], isCustomDivisi: false, pic: '', 
-    temaId: '', temaAr: '', temaEn: '', 
-    date: '', endDate: '', waktu: '', lokasi: '', pemateri: '',
-    colorId: 'info'
+    temaId: '', temaAr: '', temaEn: '', date: '', endDate: '', waktu: '', lokasi: '', pemateri: '', colorId: 'info'
   });
 
   const events = history[historyIndex] || {}; 
@@ -435,9 +450,7 @@ export default function App() {
       
       const newHistory = prevHistory.slice(0, historyIndex + 1);
       newHistory.push(newEvents);
-      
       syncToCloud(newEvents);
-      
       return newHistory;
     });
     setHistoryIndex(prev => prev + 1);
@@ -466,7 +479,7 @@ export default function App() {
       [newId]: {
         id: newId,
         parentType: 'Event',
-        title: 'Event Baru',
+        title: 'Tugas Media Baru',
         unit: UNIT_OPTIONS[0],
         date: null,
         colorId: 'default',
@@ -479,12 +492,39 @@ export default function App() {
   const handleUpdateEventTitle = (eventId, newTitle) => updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], title: newTitle } }));
   const handleUpdateEventUnit = (eventId, newUnit) => updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], unit: newUnit } }));
   const handleUpdateEventColor = (eventId, colorId) => updateEvents(prev => ({ ...prev, [eventId]: { ...prev[eventId], colorId: colorId } }));
-
+  
   const handleDeleteEvent = (eventId) => {
     updateEvents(prev => {
       const newEvents = { ...prev };
       delete newEvents[eventId];
       return newEvents;
+    });
+  };
+
+  // FUNGSI DUPLIKAT: Meng-copy satu blok Tugas Media beserta isinya, dan menaruhnya di 'Cadangan' (Kiri)
+  const handleDuplicateEvent = (eventId) => {
+    updateEvents(prev => {
+      const original = prev[eventId];
+      if (!original) return prev;
+      
+      const newId = generateId();
+      // Copy tasks, give them new IDs, set all to uncompleted
+      const duplicatedTasks = (original.tasks || []).map(t => ({
+        ...t,
+        id: generateId(),
+        isCompleted: false
+      }));
+
+      return {
+        ...prev,
+        [newId]: {
+          ...original,
+          id: newId,
+          date: null, // Masuk ke panel kiri (Blok Cadangan)
+          title: `${original.title} (Copy)`,
+          tasks: duplicatedTasks
+        }
+      };
     });
   };
 
@@ -565,14 +605,13 @@ export default function App() {
   };
 
   const handleEditSchoolEvent = (eventData) => {
-    // Determine if divisi is custom
     const isCustom = !DIVISI_OPTIONS.includes(eventData.divisi);
     setSchoolEventForm({
       ...eventData,
       isCustomDivisi: isCustom
     });
-    setSelectedViewEvent(null); // Close view modal if it was open
-    setIsSchoolEventModalOpen(true); // Open edit form
+    setSelectedViewEvent(null);
+    setIsSchoolEventModalOpen(true); 
   };
 
   const handleSaveSchoolEvent = (e) => {
@@ -662,7 +701,6 @@ export default function App() {
       });
     }
   });
-  // Urutkan berdasarkan tanggal
   unfinishedTasks.sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const allSchoolEventsList = Object.values(schoolEvents).sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -701,7 +739,7 @@ export default function App() {
             <button onClick={() => setWeekOffset(prev => prev - 1)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Pekan Lalu">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
             </button>
-            <span className="text-xs font-bold text-gray-700 min-w-[90px] text-center tracking-wide">
+            <span className="text-xs font-bold text-gray-700 min-w-[90px] text-center tracking-wide font-tanggal">
               {weekOffset === 0 ? 'PEKAN INI' : weekOffset === -1 ? 'PEKAN LALU' : weekOffset === 1 ? 'PEKAN DEPAN' : `PEKAN ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
             </span>
             <button onClick={() => setWeekOffset(prev => prev + 1)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Pekan Depan">
@@ -727,12 +765,12 @@ export default function App() {
         </div>
       </header>
 
+      {}
       <div className="flex flex-col xl:flex-row gap-4 flex-1 min-h-0">
         
-        {/* LEFT PANEL: BLOK CADANGAN & TUGAS BELUM SELESAI */}
+        {/* PANEL KIRI: BLOK CADANGAN & TUGAS BELUM SELESAI */}
         <div className="w-full xl:w-64 flex flex-col gap-4 shrink-0 z-30">
           
-          {/* CONTAINER 1: BLOK CADANGAN */}
           <div className="bg-white rounded-2xl p-4 border border-gray-200 flex flex-col shadow-sm sticky top-[6.5rem] h-fit" style={{ maxHeight: 'calc(50vh - 4.5rem)' }}>
             <div className="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 py-1 border-b border-gray-100">
               <h2 className="font-extrabold text-gray-800 uppercase text-xs tracking-widest flex items-center gap-2">
@@ -754,7 +792,7 @@ export default function App() {
                     key={event.id} event={event} onDragStart={handleDragStart} onDragEnd={handleDragEnd}
                     onUpdateEventParentType={handleUpdateEventParentType} onUpdateEventTitle={handleUpdateEventTitle}
                     onUpdateEventUnit={handleUpdateEventUnit} onUpdateEventColor={handleUpdateEventColor}
-                    onDeleteEvent={handleDeleteEvent} onAddTask={handleAddTask} onUpdateTask={handleUpdateTask}
+                    onDeleteEvent={handleDeleteEvent} onDuplicateEvent={handleDuplicateEvent} onAddTask={handleAddTask} onUpdateTask={handleUpdateTask}
                     onDeleteTask={handleDeleteTask} onToggleTaskCompletion={handleToggleTaskCompletion}
                   />
                 ))
@@ -762,13 +800,12 @@ export default function App() {
             </div>
           </div>
 
-          {/* CONTAINER 2: TUGAS BELUM SELESAI */}
           <div className="bg-amber-50/70 rounded-2xl p-4 border border-amber-200 flex flex-col shadow-inner sticky h-fit" style={{ top: 'calc(50vh + 3rem)', maxHeight: 'calc(50vh - 4.5rem)' }}>
             <div className="flex justify-between items-center mb-4 sticky top-0 bg-amber-50/70 py-1 z-10 border-b border-amber-200/50 backdrop-blur-sm">
               <h2 className="font-extrabold text-amber-800 uppercase text-xs tracking-widest flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm animate-pulse"></span> Menunggu
               </h2>
-              <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg border border-amber-200 shadow-sm">
+              <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg border border-amber-200 shadow-sm font-tanggal">
                 {unfinishedTasks.length} Tugas
               </span>
             </div>
@@ -792,7 +829,7 @@ export default function App() {
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate pr-6" title={eventTitle}>
                           {eventTitle || 'Tanpa Judul'}
                         </span>
-                        <span className="text-[9px] font-black text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 uppercase tracking-widest absolute right-2 top-2">
+                        <span className="text-[9px] font-black text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 uppercase tracking-widest absolute right-2 top-2 font-tanggal">
                           {shortDay}
                         </span>
                       </div>
@@ -823,7 +860,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* CENTER PANEL: CALENDAR */}
+        {}
+        {/* PANEL TENGAH: CALENDAR */}
         <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col min-w-0 w-full mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-px bg-gray-100 flex-1">
             {currentWeekDays.map((day, index) => {
@@ -843,7 +881,8 @@ export default function App() {
                 <div key={day.dateKey} className="bg-white min-h-[600px] flex flex-col h-full transition-all group/day" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, day.dateKey)}>
                   <div className={`p-3 border-b flex justify-center items-center shadow-sm relative ${headerColorClass}`}>
                     {isToday && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>}
-                    <h3 className={`text-[13px] tracking-wide ${isToday ? 'font-extrabold' : 'font-bold'}`}>{day.display}</h3>
+                    {/* Menggunakan font baru "font-tanggal" */}
+                    <h3 className={`text-[13px] tracking-wide font-tanggal ${isToday ? 'font-extrabold text-base' : 'font-bold'}`}>{day.display}</h3>
                   </div>
                   
                   <div className={`flex-1 p-2 transition-colors flex flex-col h-full ${dropAreaBgClass}`}>
@@ -861,7 +900,7 @@ export default function App() {
                         key={event.id} event={event} onDragStart={handleDragStart} onDragEnd={handleDragEnd}
                         onUpdateEventParentType={handleUpdateEventParentType} onUpdateEventTitle={handleUpdateEventTitle}
                         onUpdateEventUnit={handleUpdateEventUnit} onUpdateEventColor={handleUpdateEventColor}
-                        onDeleteEvent={handleDeleteEvent} onAddTask={handleAddTask} onUpdateTask={handleUpdateTask}
+                        onDeleteEvent={handleDeleteEvent} onDuplicateEvent={handleDuplicateEvent} onAddTask={handleAddTask} onUpdateTask={handleUpdateTask}
                         onDeleteTask={handleDeleteTask} onToggleTaskCompletion={handleToggleTaskCompletion}
                       />
                     ))}
@@ -878,10 +917,10 @@ export default function App() {
           </div>
         </div>
 
-        {/* RIGHT PANEL: SCHOOL EVENTS & COMPLETED TASKS */}
+        {}
+        {/* PANEL KANAN: SCHOOL EVENTS & COMPLETED TASKS */}
         <div className="w-full xl:w-[17rem] flex flex-col gap-4 shrink-0 z-30">
           
-          {/* CONTAINER 3: EVENT SEKOLAH LIST */}
           <div className="bg-white rounded-2xl p-4 border border-gray-200 flex flex-col shadow-sm sticky top-[6.5rem] h-fit" style={{ maxHeight: 'calc(50vh - 4.5rem)' }}>
             <div className="flex justify-between items-center mb-4 sticky top-0 bg-white py-1 z-10 border-b border-gray-100">
               <h2 className="font-extrabold text-gray-800 uppercase text-xs tracking-widest flex items-center gap-2">
@@ -905,7 +944,12 @@ export default function App() {
                   const hasEndDate = se.endDate && se.endDate !== se.date;
 
                   return (
-                    <div key={se.id} onClick={() => setSelectedViewEvent(se)} className={`p-2.5 rounded-xl border flex flex-col gap-1.5 group relative transition-all cursor-pointer hover:shadow-md ${activeColor.bg} ${activeColor.border} ${isPast ? 'opacity-60 grayscale-[50%]' : ''}`}>
+                    // PERUBAHAN UI: border-r-4 (garis kanan tebal), borderRightColor
+                    <div 
+                      key={se.id} onClick={() => setSelectedViewEvent(se)} 
+                      className={`p-2.5 rounded-xl border border-gray-200 flex flex-col gap-1.5 group relative transition-all cursor-pointer hover:shadow-md border-r-4 ${activeColor.bg} ${isPast ? 'opacity-60 grayscale-[50%]' : ''}`}
+                      style={{ borderRightColor: activeColor.tab.replace('bg-', '') }}
+                    >
                       <div className="flex justify-between items-start">
                         <span className={`text-[9px] font-extrabold uppercase tracking-widest text-white ${activeColor.tab} px-1.5 py-0.5 rounded shadow-sm`}>
                           {se.divisi}
@@ -917,7 +961,7 @@ export default function App() {
                         )}
                       </div>
                       <h4 className="text-[11px] font-bold text-gray-800 leading-snug line-clamp-2">{se.nama}</h4>
-                      <p className="text-[10px] font-semibold text-gray-600 flex items-center gap-1">
+                      <p className="text-[10px] font-semibold text-gray-600 flex items-center gap-1 font-tanggal">
                         <svg className={`w-3 h-3 ${activeColor.tab.replace('bg-', 'text-')}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         {new Date(se.date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
                       </p>
@@ -928,13 +972,12 @@ export default function App() {
             </div>
           </div>
 
-          {/* CONTAINER 4: SELESAI */}
           <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 flex flex-col shadow-inner sticky h-fit" style={{ top: 'calc(50vh + 3rem)', maxHeight: 'calc(50vh - 4.5rem)' }}>
             <div className="flex justify-between items-center mb-4 sticky top-0 bg-emerald-50/80 py-1 z-10 border-b border-emerald-100 backdrop-blur-sm">
               <h2 className="font-extrabold text-emerald-800 uppercase text-xs tracking-widest flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm animate-pulse"></span> Selesai
               </h2>
-              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-200 shadow-sm">
+              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-200 shadow-sm font-tanggal">
                 {completedTasks.length} Tugas
               </span>
             </div>
@@ -984,6 +1027,7 @@ export default function App() {
       </div>
 
       {}
+      {/* MODALS */}
       {isSchoolEventModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
@@ -1018,7 +1062,7 @@ export default function App() {
                         if(e.target.value === '...') setSchoolEventForm({...schoolEventForm, isCustomDivisi: true, divisi: ''});
                         else setSchoolEventForm({...schoolEventForm, divisi: e.target.value});
                       }} 
-                      className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm appearance-none"
+                      className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm appearance-none text-slate-800"
                     >
                       {DIVISI_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                       <option value="...">+ Ketik Manual...</option>
@@ -1054,15 +1098,15 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
                   <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Mulai <span className="text-red-500">*</span></label>
-                  <input type="date" required value={schoolEventForm.date} onChange={e => setSchoolEventForm({...schoolEventForm, date: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm" />
+                  <input type="date" required value={schoolEventForm.date} onChange={e => setSchoolEventForm({...schoolEventForm, date: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm font-tanggal" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Selesai (Opsional)</label>
-                  <input type="date" min={schoolEventForm.date} value={schoolEventForm.endDate || ''} onChange={e => setSchoolEventForm({...schoolEventForm, endDate: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm" />
+                  <input type="date" min={schoolEventForm.date} value={schoolEventForm.endDate || ''} onChange={e => setSchoolEventForm({...schoolEventForm, endDate: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm font-tanggal" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Waktu (Jam)</label>
-                  <input type="time" value={schoolEventForm.waktu} onChange={e => setSchoolEventForm({...schoolEventForm, waktu: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm" />
+                  <input type="time" value={schoolEventForm.waktu} onChange={e => setSchoolEventForm({...schoolEventForm, waktu: e.target.value})} className="w-full text-sm font-bold text-gray-800 p-2.5 px-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none cursor-pointer shadow-sm font-tanggal" />
                 </div>
                 <div className="md:col-span-3">
                   <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Lokasi Acara</label>
@@ -1143,7 +1187,7 @@ export default function App() {
                <div className="grid grid-cols-2 gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                   <div>
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Tanggal Acara</span>
-                    <p className="text-sm font-bold text-gray-700 mt-1 flex items-center gap-1.5">
+                    <p className="text-sm font-bold text-gray-700 mt-1 flex items-center gap-1.5 font-tanggal">
                        <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                        {selectedViewEvent.date ? (
                          selectedViewEvent.endDate && selectedViewEvent.endDate !== selectedViewEvent.date 
@@ -1154,7 +1198,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Waktu / Jam</span>
-                    <p className="text-sm font-bold text-gray-700 mt-1 flex items-center gap-1.5">
+                    <p className="text-sm font-bold text-gray-700 mt-1 flex items-center gap-1.5 font-tanggal">
                        <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                        {selectedViewEvent.waktu || '-'}
                     </p>
@@ -1199,7 +1243,15 @@ export default function App() {
         </div>
       )}
 
+      {}
       <style dangerouslySetInnerHTML={{__html: `
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&display=swap');
+        
+        .font-tanggal {
+          font-family: 'Outfit', sans-serif;
+          letter-spacing: -0.02em;
+        }
+
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
